@@ -7,6 +7,7 @@ import useAuthStore from './store/authStore';
 import LandingPage from "./landing/LandingPage";
 import Signup from './pages/Signup';
 import Login from './pages/Login';
+import AuthSuccess from './pages/AuthSuccess';
 import Dashboard from './pages/Dashboard';
 import SkillsProfile from './pages/SkillsProfile';
 import LearningPath from './pages/LearningPath';
@@ -44,6 +45,10 @@ function App() {
           />
 
           {/* Protected Dashboard Pages */}
+          <Route 
+            path="/auth/success" 
+            element={<AuthSuccess />} 
+          />
           <Route 
             path="/dashboard-main" 
             element={token ? <Dashboard /> : <Navigate to="/login" />} 

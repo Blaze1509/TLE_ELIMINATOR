@@ -1,182 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, Calendar, Trophy, Zap, Target, CheckCircle, Clock, ArrowUp } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import useAuthStore from '../store/authStore';
+import { api } from '../api/apiClient';
 import toast from 'react-hot-toast';
 
 const ProgressTracking = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('progress-tracking');
+  const [stats, setStats] = useState({
+    readinessScore: 0,
+    totalAnalyses: 0,
+    skillsCount: 0,
+    completedAnalyses: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Dummy progress data
-  const progressOverview = {
-    targetRole: 'Health Informatics Engineer',
-    readinessPercentage: 68,
-    readinessIncrease: 12,
-    coursesCompleted: 3,
-    coursesTotal: 7,
-    skillsImproved: 4
+  useEffect(() => {
+    fetchUserStats();
+  }, []);
+
+  const fetchUserStats = async () => {
+    try {
+      const response = await api.getUserStats();
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Timeline activities
-  const activityTimeline = [
-    {
-      id: 1,
-      type: 'course-completed',
-      title: 'Completed "FHIR Fundamentals"',
-      description: 'Successfully finished the course on FHIR basics',
-      date: '2024-12-15',
-      skillImpacted: 'FHIR'
-    },
-    {
-      id: 2,
-      type: 'skill-upgraded',
-      title: 'FHIR skill upgraded to Intermediate',
-      description: 'Your proficiency increased from 35% to 65%',
-      date: '2024-12-15',
-      skillImpacted: 'FHIR'
-    },
-    {
-      id: 3,
-      type: 'course-started',
-      title: 'Started "SQL for Healthcare Analytics"',
-      description: 'Began learning SQL for healthcare data analysis',
-      date: '2024-12-10',
-      skillImpacted: 'SQL'
-    },
-    {
-      id: 4,
-      type: 'skill-added',
-      title: 'Skill added: Data Analytics',
-      description: 'New skill added to your learning profile',
-      date: '2024-12-05',
-      skillImpacted: 'Data Analytics'
-    },
-    {
-      id: 5,
-      type: 'course-completed',
-      title: 'Completed "HIPAA Compliance Essentials"',
-      description: 'Successfully finished the HIPAA course',
-      date: '2024-11-28',
-      skillImpacted: 'HIPAA'
-    },
-    {
-      id: 6,
-      type: 'course-started',
-      title: 'Started "FHIR Fundamentals"',
-      description: 'Began learning FHIR standards',
-      date: '2024-11-20',
-      skillImpacted: 'FHIR'
-    }
-  ];
+  // Real data from API or defaults
+  const progressOverview = {
+    targetRole: 'Health Informatics Engineer',
+    readinessPercentage: stats.readinessScore || 0,
+    readinessIncrease: 0,
+    coursesCompleted: 0,
+    coursesTotal: 7,
+    skillsImproved: 0
+  };
 
-  // Skill growth data
-  const skillGrowth = [
-    {
-      skill: 'FHIR',
-      progression: [
-        { stage: 'Initial', level: 35, date: '2024-11-20' },
-        { stage: 'Current', level: 65, date: '2024-12-15' }
-      ],
-      improvement: '+30%',
-      status: 'intermediate'
-    },
-    {
-      skill: 'SQL',
-      progression: [
-        { stage: 'Initial', level: 65, date: '2024-10-15' },
-        { stage: 'Current', level: 75, date: '2024-12-15' }
-      ],
-      improvement: '+10%',
-      status: 'advanced'
-    },
-    {
-      skill: 'HIPAA',
-      progression: [
-        { stage: 'Initial', level: 50, date: '2024-11-01' },
-        { stage: 'Current', level: 80, date: '2024-12-15' }
-      ],
-      improvement: '+30%',
-      status: 'advanced'
-    },
-    {
-      skill: 'Data Analytics',
-      progression: [
-        { stage: 'Initial', level: 0, date: '2024-12-05' },
-        { stage: 'Current', level: 40, date: '2024-12-15' }
-      ],
-      improvement: '+40%',
-      status: 'beginner'
-    }
-  ];
-
-  // Readiness trend data (weekly)
+  const activityTimeline = [];
+  const skillGrowth = [];
   const readinessTrend = [
-    { week: 'Week 1', readiness: 45, date: '2024-10-01' },
-    { week: 'Week 2', readiness: 48, date: '2024-10-08' },
-    { week: 'Week 3', readiness: 50, date: '2024-10-15' },
-    { week: 'Week 4', readiness: 52, date: '2024-10-22' },
-    { week: 'Week 5', readiness: 55, date: '2024-10-29' },
-    { week: 'Week 6', readiness: 58, date: '2024-11-05' },
-    { week: 'Week 7', readiness: 60, date: '2024-11-12' },
-    { week: 'Week 8', readiness: 62, date: '2024-11-19' },
-    { week: 'Week 9', readiness: 65, date: '2024-11-26' },
-    { week: 'Week 10', readiness: 68, date: '2024-12-03' }
+    { week: 'Week 1', readiness: 0, date: '2024-10-01' },
+    { week: 'Week 2', readiness: 0, date: '2024-10-08' },
+    { week: 'Week 3', readiness: 0, date: '2024-10-15' },
+    { week: 'Week 4', readiness: 0, date: '2024-10-22' },
+    { week: 'Week 5', readiness: 0, date: '2024-10-29' },
+    { week: 'Week 6', readiness: 0, date: '2024-11-05' },
+    { week: 'Week 7', readiness: 0, date: '2024-11-12' },
+    { week: 'Week 8', readiness: 0, date: '2024-11-19' },
+    { week: 'Week 9', readiness: 0, date: '2024-11-26' },
+    { week: 'Week 10', readiness: stats.readinessScore || 0, date: '2024-12-03' }
   ];
-
-  // Course completion tracking
-  const courseTracking = [
-    {
-      id: 1,
-      title: 'FHIR Fundamentals',
-      status: 'completed',
-      skillImpacted: 'FHIR',
-      completionDate: '2024-12-15',
-      platform: 'Coursera'
-    },
-    {
-      id: 2,
-      title: 'HIPAA Compliance Essentials',
-      status: 'completed',
-      skillImpacted: 'HIPAA',
-      completionDate: '2024-11-28',
-      platform: 'edX'
-    },
-    {
-      id: 3,
-      title: 'Healthcare Data Fundamentals',
-      status: 'completed',
-      skillImpacted: 'Data Analytics',
-      completionDate: '2024-11-15',
-      platform: 'Udemy'
-    },
-    {
-      id: 4,
-      title: 'SQL for Healthcare Analytics',
-      status: 'in-progress',
-      skillImpacted: 'SQL',
-      completionDate: null,
-      platform: 'Udemy'
-    },
-    {
-      id: 5,
-      title: 'HL7 Messaging Standards',
-      status: 'not-started',
-      skillImpacted: 'HL7',
-      completionDate: null,
-      platform: 'Coursera'
-    }
-  ];
-
-  // Time-based insights
+  const courseTracking = [];
   const timeInsights = {
-    avgHoursPerWeek: 8.5,
-    consistencyScore: 85,
-    weeksToReadiness: 6,
-    learningStreak: 12
+    avgHoursPerWeek: 0,
+    consistencyScore: 0,
+    weeksToReadiness: 0,
+    learningStreak: 0
   };
 
   const handleLogout = () => {
@@ -394,28 +281,39 @@ const ProgressTracking = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {activityTimeline.slice(0, 6).map((activity, index) => (
-                        <div key={activity.id} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className="p-2 rounded-full bg-gray-100">
-                              {getTimelineIcon(activity.type)}
+                      {activityTimeline.length > 0 ? (
+                        activityTimeline.slice(0, 6).map((activity, index) => (
+                          <div key={activity.id} className="flex gap-3">
+                            <div className="flex flex-col items-center">
+                              <div className="p-2 rounded-full bg-gray-100">
+                                {getTimelineIcon(activity.type)}
+                              </div>
+                              {index < activityTimeline.length - 1 && (
+                                <div className="w-0.5 h-8 bg-gray-200 mt-2" />
+                              )}
                             </div>
-                            {index < activityTimeline.length - 1 && (
-                              <div className="w-0.5 h-8 bg-gray-200 mt-2" />
-                            )}
-                          </div>
-                          <div className="flex-1 pt-1">
-                            <p className="text-xs font-semibold text-gray-900">{activity.title}</p>
-                            <p className="text-xs text-gray-600 mt-1">{activity.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-gray-500">{new Date(activity.date).toLocaleDateString()}</span>
-                              <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
-                                {activity.skillImpacted}
-                              </span>
+                            <div className="flex-1 pt-1">
+                              <p className="text-xs font-semibold text-gray-900">{activity.title}</p>
+                              <p className="text-xs text-gray-600 mt-1">{activity.description}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-gray-500">{new Date(activity.date).toLocaleDateString()}</span>
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+                                  {activity.skillImpacted}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 mb-2">No activity yet</p>
+                          <p className="text-sm text-gray-400 mb-4">Complete skill analyses to see your learning activity</p>
+                          <Button onClick={() => navigate('/skill-analysis')} variant="outline" size="sm">
+                            Start Learning
+                          </Button>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </CardContent>
                 </Card>

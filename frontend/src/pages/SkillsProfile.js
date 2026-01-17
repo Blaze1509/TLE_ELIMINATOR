@@ -12,13 +12,7 @@ const SkillsProfile = () => {
   const [activeSection, setActiveSection] = useState('skills-profile');
   
   // State for skills management
-  const [skills, setSkills] = useState([
-    { id: 1, name: 'FHIR', level: 'Beginner', proficiency: 35 },
-    { id: 2, name: 'HL7', level: 'Beginner', proficiency: 25 },
-    { id: 3, name: 'SQL', level: 'Intermediate', proficiency: 65 },
-    { id: 4, name: 'HIPAA', level: 'Intermediate', proficiency: 55 },
-    { id: 5, name: 'Data Analytics', level: 'Advanced', proficiency: 80 },
-  ]);
+  const [skills, setSkills] = useState([]);
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillLevel, setNewSkillLevel] = useState('Beginner');
   const [showAddSkill, setShowAddSkill] = useState(false);

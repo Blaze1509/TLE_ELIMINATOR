@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, AlertCircle, Check, X, Target, Zap, TrendingDown, Award, Lightbulb, ArrowUp } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import useAuthStore from '../store/authStore';
+import { api } from '../api/apiClient';
 import toast from 'react-hot-toast';
 
 const SkillAnalysis = () => {
@@ -11,189 +12,41 @@ const SkillAnalysis = () => {
   const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState('missing');
   const [activeSection, setActiveSection] = useState('skill-analysis');
+  const [analyses, setAnalyses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Career readiness data
-  const readinessData = {
-    role: 'Health Informatics Engineer',
-    overallReadiness: 64,
-    level: 'Moderately-ready',
-    requiredSkillsCovered: 7,
-    totalRequiredSkills: 11,
-    lastUpdated: '2024-12-15'
+  useEffect(() => {
+    fetchUserAnalyses();
+  }, []);
+
+  const fetchUserAnalyses = async () => {
+    try {
+      const response = await api.getUserAnalyses();
+      setAnalyses(response.data);
+    } catch (error) {
+      console.error('Error fetching analyses:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Missing skills (not in user profile)
-  const missingSkills = [
-    {
-      id: 1,
-      name: 'HL7 Standards',
-      category: 'Healthcare IT',
-      importance: 'High',
-      whyMatters: 'Required for healthcare data exchange and interoperability between systems',
-      impactOnReadiness: '+8%',
-      estimatedLearnTime: '5 weeks'
-    },
-    {
-      id: 2,
-      name: 'EHR Systems (Epic/Cerner)',
-      category: 'Healthcare IT',
-      importance: 'High',
-      whyMatters: 'Foundational knowledge for Health Informatics Engineer role - most healthcare organizations use these systems',
-      impactOnReadiness: '+12%',
-      estimatedLearnTime: '8 weeks'
-    },
-    {
-      id: 3,
-      name: 'Healthcare Cloud Architecture (Azure)',
-      category: 'Cloud Infrastructure',
-      importance: 'High',
-      whyMatters: 'Azure is the primary cloud platform for healthcare applications and HIPAA-compliant deployments',
-      impactOnReadiness: '+10%',
-      estimatedLearnTime: '6 weeks'
-    }
-  ];
+  // Real data from API or defaults
+  const readinessData = {
+    role: 'Health Informatics Engineer',
+    overallReadiness: analyses.length > 0 ? analyses[0].analysisResult?.readinessScore || 0 : 0,
+    level: 'Not analyzed yet',
+    requiredSkillsCovered: 0,
+    totalRequiredSkills: 11,
+    lastUpdated: new Date().toISOString().split('T')[0]
+  };
 
-  // Weak skills (present but below required proficiency)
-  const weakSkills = [
-    {
-      id: 1,
-      name: 'SQL',
-      currentLevel: 'Intermediate',
-      requiredLevel: 'Advanced',
-      currentProficiency: 75,
-      requiredProficiency: 90,
-      gap: 15,
-      whyMatters: 'Healthcare queries require complex joins, window functions, and performance optimization',
-      recommendedImprovement: 'Advanced SQL optimization for healthcare datasets'
-    },
-    {
-      id: 2,
-      name: 'Data Analytics',
-      currentLevel: 'Beginner',
-      requiredLevel: 'Intermediate',
-      currentProficiency: 40,
-      requiredProficiency: 70,
-      gap: 30,
-      whyMatters: 'Critical for clinical decision support and population health analytics',
-      recommendedImprovement: 'Healthcare analytics and BI tools (Tableau/Power BI)'
-    },
-    {
-      id: 3,
-      name: 'Clinical Workflow Knowledge',
-      currentLevel: 'Beginner',
-      requiredLevel: 'Intermediate',
-      currentProficiency: 35,
-      requiredProficiency: 70,
-      gap: 35,
-      whyMatters: 'Essential to understand clinical processes for system design and implementation',
-      recommendedImprovement: 'Clinical informatics fundamentals and healthcare processes'
-    }
-  ];
-
-  // Strong skills (meeting or exceeding requirements)
-  const strongSkills = [
-    {
-      id: 1,
-      name: 'FHIR',
-      proficiency: 65,
-      requiredProficiency: 60,
-      level: 'Intermediate',
-      exceeds: true,
-      evidence: 'Completed FHIR API development project',
-      certificateLink: 'FHIR Basics Certification'
-    },
-    {
-      id: 2,
-      name: 'HIPAA Compliance',
-      proficiency: 80,
-      requiredProficiency: 75,
-      level: 'Advanced',
-      exceeds: true,
-      evidence: 'HIPAA Compliance Certification completed',
-      certificateLink: 'HIPAA Business Associate Certification'
-    },
-    {
-      id: 3,
-      name: 'Python Programming',
-      proficiency: 60,
-      requiredProficiency: 50,
-      level: 'Intermediate',
-      exceeds: true,
-      evidence: 'Built 3 healthcare automation tools',
-      certificateLink: 'Python Advanced Developer'
-    }
-  ];
-
-  // Skill importance breakdown
-  const skillImportance = [
-    { skill: 'EHR Systems', importance: 18, userLevel: 10 },
-    { skill: 'HL7 Standards', importance: 15, userLevel: 0 },
-    { skill: 'FHIR', importance: 14, userLevel: 65 },
-    { skill: 'SQL', importance: 13, userLevel: 75 },
-    { skill: 'Healthcare Cloud', importance: 12, userLevel: 0 },
-    { skill: 'HIPAA Compliance', importance: 11, userLevel: 80 },
-    { skill: 'Data Analytics', importance: 10, userLevel: 40 },
-    { skill: 'Clinical Workflow', importance: 7, userLevel: 35 }
-  ];
-
-  // AI explanations
-  const aiExplanations = [
-    {
-      id: 1,
-      title: 'EHR Systems Impact',
-      explanation: 'EHR Systems account for 18% of your readiness score because nearly all healthcare organizations in the US use Epic, Cerner, or similar platforms. Proficiency here is non-negotiable.',
-      relatedSkill: 'EHR Systems'
-    },
-    {
-      id: 2,
-      title: 'Improving HL7 Standards',
-      explanation: 'Learning HL7 Standards would increase your readiness by ~8% and would also unlock understanding of clinical data exchange, making it one of the highest-ROI skills to learn next.',
-      relatedSkill: 'HL7 Standards'
-    },
-    {
-      id: 3,
-      title: 'Your SQL Strength',
-      explanation: 'Your SQL proficiency at 75% exceeds the 65% requirement. However, advancing to 90% would unlock advanced healthcare analytics capabilities (+6% readiness).',
-      relatedSkill: 'SQL'
-    }
-  ];
-
-  // Recommended next actions
-  const recommendedActions = [
-    {
-      rank: 1,
-      skill: 'EHR Systems Fundamentals',
-      reason: 'Highest impact on readiness (+12%)',
-      course: 'EHR Implementation & Workflow (Udemy)',
-      duration: '8 weeks',
-      priority: 'Critical'
-    },
-    {
-      rank: 2,
-      skill: 'HL7 Standards Basics',
-      reason: 'Essential for healthcare interoperability',
-      course: 'HL7 Messaging Standards (Coursera)',
-      duration: '5 weeks',
-      priority: 'Critical'
-    },
-    {
-      rank: 3,
-      skill: 'Healthcare Cloud Architecture',
-      reason: 'Modern healthcare infrastructure requirement',
-      course: 'Microsoft Azure for Healthcare (Microsoft Learn)',
-      duration: '6 weeks',
-      priority: 'High'
-    }
-  ];
-
-  // Historical comparison
-  const historicalData = [
-    { date: '2024-10-15', readiness: 52, skillsLearned: 0 },
-    { date: '2024-11-01', readiness: 56, skillsLearned: 1 },
-    { date: '2024-11-15', readiness: 58, skillsLearned: 2 },
-    { date: '2024-12-01', readiness: 61, skillsLearned: 3 },
-    { date: '2024-12-15', readiness: 64, skillsLearned: 4 }
-  ];
+  const missingSkills = [];
+  const weakSkills = [];
+  const strongSkills = [];
+  const skillImportance = [];
+  const aiExplanations = [];
+  const recommendedActions = [];
+  const historicalData = [];
 
 
   const handleLogout = () => {
@@ -400,33 +253,44 @@ const SkillAnalysis = () => {
                 {/* Missing Skills Tab */}
                 {activeTab === 'missing' && (
                   <div className="space-y-4">
-                    {missingSkills.map((skill) => (
-                      <div key={skill.id} className="p-4 bg-red-50 rounded-lg border border-red-200">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-900">{skill.name}</h4>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs px-2 py-1 bg-red-200 text-red-800 rounded">{skill.category}</span>
-                              <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded font-semibold">{skill.importance}</span>
+                    {missingSkills.length > 0 ? (
+                      missingSkills.map((skill) => (
+                        <div key={skill.id} className="p-4 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900">{skill.name}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs px-2 py-1 bg-red-200 text-red-800 rounded">{skill.category}</span>
+                                <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded font-semibold">{skill.importance}</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-red-600">{skill.impactOnReadiness}</p>
+                              <p className="text-xs text-gray-600">readiness impact</p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-bold text-red-600">{skill.impactOnReadiness}</p>
-                            <p className="text-xs text-gray-600">readiness impact</p>
+                          <p className="text-xs text-gray-700 mb-3">{skill.whyMatters}</p>
+                          <div className="flex items-center justify-between pt-3 border-t border-red-200">
+                            <span className="text-xs text-gray-600">Est. time: {skill.estimatedLearnTime}</span>
+                            <Button
+                              onClick={() => navigate('/learning-path')}
+                              className="enhanced-button text-xs"
+                            >
+                              Learn This Skill
+                            </Button>
                           </div>
                         </div>
-                        <p className="text-xs text-gray-700 mb-3">{skill.whyMatters}</p>
-                        <div className="flex items-center justify-between pt-3 border-t border-red-200">
-                          <span className="text-xs text-gray-600">Est. time: {skill.estimatedLearnTime}</span>
-                          <Button
-                            onClick={() => navigate('/learning-path')}
-                            className="enhanced-button text-xs"
-                          >
-                            Learn This Skill
-                          </Button>
-                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-2">No skill analysis available</p>
+                        <p className="text-sm text-gray-400 mb-4">Complete a skill analysis to see missing skills</p>
+                        <Button onClick={() => navigate('/skill-analysis')} variant="outline">
+                          Start Analysis
+                        </Button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
 

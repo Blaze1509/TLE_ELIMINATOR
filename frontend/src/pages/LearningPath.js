@@ -10,84 +10,21 @@ const LearningPath = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('learning-path');
-  const [learningPath, setLearningPath] = useState([
-    { id: 1, courseTitle: 'FHIR Fundamentals', skill: 'FHIR', status: 'in-progress', progress: 65, platform: 'Coursera', duration: '4 weeks' },
-    { id: 2, courseTitle: 'SQL for Healthcare', skill: 'SQL', status: 'not-started', progress: 0, platform: 'Udemy', duration: '6 weeks' }
-  ]);
+  const [learningPath, setLearningPath] = useState([]);
 
-  // Dummy recommended courses
-  const recommendedCourses = [
-    {
-      id: 1,
-      title: 'FHIR Fundamentals',
-      platform: 'Coursera',
-      skill: 'FHIR',
-      difficulty: 'Beginner',
-      duration: '4 weeks',
-      rating: 4.8,
-      explanation: 'This course covers FHIR basics required for healthcare interoperability.',
-      alreadyAdded: true
-    },
-    {
-      id: 2,
-      title: 'SQL for Healthcare Analytics',
-      platform: 'Udemy',
-      skill: 'SQL',
-      difficulty: 'Intermediate',
-      duration: '6 weeks',
-      rating: 4.6,
-      explanation: 'Master SQL queries for healthcare data analysis and reporting.',
-      alreadyAdded: true
-    },
-    {
-      id: 3,
-      title: 'HIPAA Compliance Essentials',
-      platform: 'edX',
-      skill: 'HIPAA',
-      difficulty: 'Beginner',
-      duration: '3 weeks',
-      rating: 4.7,
-      explanation: 'Comprehensive guide to HIPAA requirements for healthcare professionals.',
-      alreadyAdded: false
-    },
-    {
-      id: 4,
-      title: 'HL7 Messaging Standards',
-      platform: 'Coursera',
-      skill: 'HL7',
-      difficulty: 'Intermediate',
-      duration: '5 weeks',
-      rating: 4.5,
-      explanation: 'Learn HL7 standards for clinical data exchange in healthcare systems.',
-      alreadyAdded: false
-    },
-    {
-      id: 5,
-      title: 'Healthcare Data Analytics',
-      platform: 'Udemy',
-      skill: 'Data Analytics',
-      difficulty: 'Advanced',
-      duration: '8 weeks',
-      rating: 4.9,
-      explanation: 'Advanced techniques for analyzing healthcare datasets and trends.',
-      alreadyAdded: false
-    }
-  ];
+  // Empty recommended courses until backend provides data
+  const recommendedCourses = [];
 
   // Learning path overview data
   const pathOverview = {
     targetRole: 'Health Informatics Engineer',
-    skillsToAcquire: 4,
-    estimatedDuration: '8 weeks',
-    progress: 25,
-    expectedReadinessIncrease: 18
+    skillsToAcquire: 0,
+    estimatedDuration: '0 weeks',
+    progress: 0,
+    expectedReadinessIncrease: 0
   };
 
-  const skillImpactData = [
-    { skill: 'FHIR', currentLevel: 'Beginner (35%)', expectedLevel: 'Intermediate (65%)', impact: '+30%' },
-    { skill: 'SQL', currentLevel: 'Intermediate (65%)', expectedLevel: 'Advanced (85%)', impact: '+20%' },
-    { skill: 'HIPAA', currentLevel: 'Beginner', expectedLevel: 'Intermediate', impact: '+25%' }
-  ];
+  const skillImpactData = [];
 
   const handleLogout = () => {
     logout();
@@ -281,63 +218,74 @@ const LearningPath = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4">
-                  {recommendedCourses.map((course) => (
-                    <div
-                      key={course.id}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">{course.title}</h3>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded">
-                              {course.platform}
-                            </span>
-                            <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(course.difficulty)}`}>
-                              {course.difficulty}
-                            </span>
-                            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                              {course.skill}
-                            </span>
+                {recommendedCourses.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4">
+                    {recommendedCourses.map((course) => (
+                      <div
+                        key={course.id}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{course.title}</h3>
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded">
+                                {course.platform}
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(course.difficulty)}`}>
+                                {course.difficulty}
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                                {course.skill}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              <span className="text-sm font-semibold text-gray-900">{course.rating}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                            <span className="text-sm font-semibold text-gray-900">{course.rating}</span>
-                          </div>
-                        </div>
-                      </div>
 
-                      <p className="text-sm text-gray-600 mb-3 italic">
-                        "{course.explanation}"
-                      </p>
+                        <p className="text-sm text-gray-600 mb-3 italic">
+                          "{course.explanation}"
+                        </p>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {course.duration}
-                        </span>
-                        {course.alreadyAdded ? (
-                          <span className="text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium flex items-center gap-1">
-                            <Check className="h-3 w-3" />
-                            Added to Path
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {course.duration}
                           </span>
-                        ) : (
-                          <Button
-                            onClick={() => handleAddCourse(course)}
-                            size="sm"
-                            className="enhanced-button text-sm"
-                          >
-                            <Plus className="h-3 w-3 mr-1" />
-                            Add to Path
-                          </Button>
-                        )}
+                          {course.alreadyAdded ? (
+                            <span className="text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium flex items-center gap-1">
+                              <Check className="h-3 w-3" />
+                              Added to Path
+                            </span>
+                          ) : (
+                            <Button
+                              onClick={() => handleAddCourse(course)}
+                              size="sm"
+                              className="enhanced-button text-sm"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add to Path
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-2">No course recommendations available</p>
+                    <p className="text-sm text-gray-400 mb-4">Complete a skill analysis to get personalized course recommendations</p>
+                    <Button onClick={() => navigate('/skill-analysis')} variant="outline">
+                      Start Analysis
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -485,36 +433,38 @@ const LearningPath = () => {
             </div>
 
             {/* Skill Impact Summary */}
-            <Card className="shadow-lg border-0 border-l-4 border-l-purple-500">
-              <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-purple-500" />
-                  Skill Impact Summary
-                </CardTitle>
-                <p className="text-xs text-gray-600 mt-2">Completing your current learning path will improve:</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {skillImpactData.map((item, index) => (
-                    <div key={index} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-gray-900">{item.skill}</span>
-                        <span className="text-sm font-bold text-green-600">{item.impact}</span>
+            {skillImpactData.length > 0 && (
+              <Card className="shadow-lg border-0 border-l-4 border-l-purple-500">
+                <CardHeader>
+                  <CardTitle className="text-gray-900 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-purple-500" />
+                    Skill Impact Summary
+                  </CardTitle>
+                  <p className="text-xs text-gray-600 mt-2">Completing your current learning path will improve:</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {skillImpactData.map((item, index) => (
+                      <div key={index} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-gray-900">{item.skill}</span>
+                          <span className="text-sm font-bold text-green-600">{item.impact}</span>
+                        </div>
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <p>Current: <span className="font-medium text-gray-900">{item.currentLevel}</span></p>
+                          <p>Expected: <span className="font-medium text-gray-900">{item.expectedLevel}</span></p>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-600 space-y-1">
-                        <p>Current: <span className="font-medium text-gray-900">{item.currentLevel}</span></p>
-                        <p>Expected: <span className="font-medium text-gray-900">{item.expectedLevel}</span></p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 p-4 bg-green-100 border border-green-300 rounded-lg">
-                  <p className="text-sm font-semibold text-green-900">
-                    📈 Your overall readiness will increase by <span className="text-lg">+{pathOverview.expectedReadinessIncrease}%</span> after completing this path!
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                  <div className="mt-6 p-4 bg-green-100 border border-green-300 rounded-lg">
+                    <p className="text-sm font-semibold text-green-900">
+                      📈 Your overall readiness will increase by <span className="text-lg">+{pathOverview.expectedReadinessIncrease}%</span> after completing this path!
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

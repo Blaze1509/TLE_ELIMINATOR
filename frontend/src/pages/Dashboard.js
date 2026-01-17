@@ -1,54 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, ArrowRight, AlertCircle, CheckCircle, Zap } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import useAuthStore from '../store/authStore';
+import { api } from '../api/apiClient';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [stats, setStats] = useState({
+    readinessScore: 0,
+    totalAnalyses: 0,
+    skillsCount: 0,
+    completedAnalyses: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Dummy Data
-  const readinessScore = 68;
+  useEffect(() => {
+    fetchUserStats();
+  }, []);
+
+  const fetchUserStats = async () => {
+    try {
+      const response = await api.getUserStats();
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      // Keep default values (0) if API fails
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Real data from API
+  const readinessScore = stats.readinessScore || 0;
   const targetRole = 'Health Informatics Engineer';
   const roleDescription = 'Design healthcare IT systems with FHIR, HL7, and HIPAA compliance';
   
   const skillsStats = {
-    total: 12,
-    beginner: 5,
-    intermediate: 4,
-    advanced: 3
+    total: stats.skillsCount || 0,
+    beginner: 0,
+    intermediate: 0,
+    advanced: 0
   };
 
   const skillGaps = {
-    missing: 3,
-    weak: 2
+    missing: 0,
+    weak: 0
   };
 
   const radarData = [
-    { skill: 'FHIR', required: 90, current: 45 },
-    { skill: 'HL7', required: 85, current: 30 },
-    { skill: 'SQL', required: 80, current: 70 },
-    { skill: 'HIPAA', required: 95, current: 50 },
-    { skill: 'Data Analytics', required: 75, current: 60 }
+    { skill: 'FHIR', required: 90, current: 0 },
+    { skill: 'HL7', required: 85, current: 0 },
+    { skill: 'SQL', required: 80, current: 0 },
+    { skill: 'HIPAA', required: 95, current: 0 },
+    { skill: 'Data Analytics', required: 75, current: 0 }
   ];
 
-  const nextActions = [
-    { id: 1, skill: 'FHIR Fundamentals', type: 'Learn', priority: 'High', icon: '🚀' },
-    { id: 2, skill: 'SQL for Healthcare', type: 'Practice', priority: 'High', icon: '📝' },
-    { id: 3, skill: 'HIPAA Compliance', type: 'Learn', priority: 'Medium', icon: '🔒' }
-  ];
+  const nextActions = [];
 
   const progressData = [
-    { week: 'Week 1', readiness: 45 },
-    { week: 'Week 2', readiness: 50 },
-    { week: 'Week 3', readiness: 58 },
-    { week: 'Week 4', readiness: 62 },
-    { week: 'Week 5', readiness: 65 },
-    { week: 'Week 6', readiness: 68 }
+    { week: 'Week 1', readiness: 0 },
+    { week: 'Week 2', readiness: 0 },
+    { week: 'Week 3', readiness: 0 },
+    { week: 'Week 4', readiness: 0 },
+    { week: 'Week 5', readiness: 0 },
+    { week: 'Week 6', readiness: readinessScore }
   ];
 
   const handleLogout = () => {
@@ -198,7 +218,11 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <p className="text-center text-sm text-gray-600 mt-2">
-                      You are <span className="font-semibold text-gray-900">moderately prepared</span> for {targetRole}.
+                      {readinessScore === 0 ? (
+                        <>Complete a <span className="font-semibold text-gray-900">skill analysis</span> to see your readiness for {targetRole}.</>
+                      ) : (
+                        <>You are <span className="font-semibold text-gray-900">moderately prepared</span> for {targetRole}.</>
+                      )}
                     </p>
                   </div>
                 </CardContent>
@@ -317,7 +341,7 @@ const Dashboard = () => {
                         <span className="text-lg font-bold text-yellow-600">{skillGaps.weak}</span>
                       </div>
                       <p className="text-xs text-gray-600 mt-3">
-                        <span className="font-semibold">FHIR</span> and <span className="font-semibold">HIPAA</span> are mandatory for your target role.
+                        Complete a skill analysis to identify missing skills for your target role.
                       </p>
                     </div>
                   </CardContent>
@@ -333,27 +357,41 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {nextActions.map((action) => (
-                        <div key={action.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
-                          <span className="text-xl">{action.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-gray-900 truncate">{action.skill}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs px-2 py-1 bg-blue-200 text-blue-800 rounded">
-                                {action.type}
-                              </span>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                action.priority === 'High'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {action.priority}
-                              </span>
+                      {nextActions.length > 0 ? (
+                        nextActions.map((action) => (
+                          <div key={action.id} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                            <span className="text-xl">{action.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-gray-900 truncate">{action.skill}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs px-2 py-1 bg-blue-200 text-blue-800 rounded">
+                                  {action.type}
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  action.priority === 'High'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {action.priority}
+                                </span>
+                              </div>
                             </div>
+                            <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                           </div>
-                          <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        ))
+                      ) : (
+                        <div className="text-center py-4">
+                          <p className="text-sm text-gray-500">Complete a skill analysis to see recommendations</p>
+                          <Button 
+                            onClick={() => navigate('/skill-analysis')} 
+                            variant="outline" 
+                            size="sm" 
+                            className="mt-2"
+                          >
+                            Start Analysis
+                          </Button>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -401,19 +439,21 @@ const Dashboard = () => {
             </div>
 
             {/* 8. Explainability Panel */}
-            <Card className="shadow-lg border-0 border-l-4 border-l-green-500 bg-green-50">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-green-900">Achievement Unlocked! 🎉</p>
-                    <p className="text-sm text-green-800 mt-1">
-                      Your readiness increased by <span className="font-bold">12%</span> after completing the SQL for Healthcare course. Keep it up!
-                    </p>
+            {readinessScore > 0 && (
+              <Card className="shadow-lg border-0 border-l-4 border-l-green-500 bg-green-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-green-900">Achievement Unlocked! 🎉</p>
+                      <p className="text-sm text-green-800 mt-1">
+                        Your readiness increased by <span className="font-bold">12%</span> after completing the SQL for Healthcare course. Keep it up!
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>

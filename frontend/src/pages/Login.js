@@ -141,7 +141,7 @@ const Login = () => {
                 variant="outline"
                 className="social-button"
                 onClick={() => {
-                  window.location.href = 'http://localhost:5001/api/auth/google';
+                  window.location.href = 'http://localhost:5000/api/auth/google';
                 }}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -157,7 +157,7 @@ const Login = () => {
                 variant="outline"
                 className="social-button"
                 onClick={() => {
-                  window.location.href = 'http://localhost:5001/api/auth/github';
+                  window.location.href = 'http://localhost:5000/api/auth/github';
                 }}
               >
                 <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

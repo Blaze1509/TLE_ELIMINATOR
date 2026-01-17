@@ -1,9 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const session = require('express-session');
+const passport = require('./config/passport');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
+const analysisRoutes = require('./routes/analysisRoutes');
+const pdfRoutes = require('./routes/pdfRoutes');
 
 const app = express();
 
@@ -13,6 +17,17 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Session middleware for passport
+app.use(session({
+  secret: process.env.JWT_SECRET || 'fallback-secret',
+  resave: false,
+  saveUninitialized: false
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -38,6 +53,8 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/analysis', analysisRoutes);
+app.use('/api/pdf', pdfRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
