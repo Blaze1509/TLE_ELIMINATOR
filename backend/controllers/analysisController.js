@@ -74,6 +74,32 @@ const callNgrokAPI = async (analysisData) => {
   }
 };
 
+// Get user statistics
+exports.getUserStats = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const analyses = await Analysis.find({ userId: decoded.userId });
+    const completedAnalyses = analyses.filter(a => a.status === 'completed');
+    
+    const stats = {
+      readinessScore: completedAnalyses.length > 0 ? completedAnalyses[completedAnalyses.length - 1].analysisResult.readinessScore : 0,
+      totalAnalyses: analyses.length,
+      skillsCount: 0,
+      completedAnalyses: completedAnalyses.length
+    };
+    
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
 // Create Analysis
 exports.createAnalysis = async (req, res) => {
   try {

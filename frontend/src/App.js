@@ -4,9 +4,14 @@ import { Toaster } from 'react-hot-toast';
 import useAuthStore from './store/authStore';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
-import Home from './pages/Home';
+import AuthSuccess from './pages/AuthSuccess';
+import Dashboard from './pages/Dashboard';
+import SkillsProfile from './pages/SkillsProfile';
+import LearningPath from './pages/LearningPath';
+import ProgressTracking from './pages/ProgressTracking';
+import SkillAnalysis from './pages/SkillAnalysis';
+import InsightsReports from './pages/InsightsReports';
 import ForgotPassword from './pages/ForgotPassword';
-import AnalysisDetail from './pages/AnalysisDetail';
 import './index.css';
 
 function App() {
@@ -19,27 +24,47 @@ function App() {
         <Routes>
           <Route 
             path="/signup" 
-            element={!token ? <Signup /> : <Navigate to="/dashboard" />} 
+            element={!token ? <Signup /> : <Navigate to="/dashboard-main" />} 
           />
           <Route 
             path="/login" 
-            element={!token ? <Login /> : <Navigate to="/dashboard" />} 
+            element={!token ? <Login /> : <Navigate to="/dashboard-main" />} 
           />
           <Route 
             path="/forgot-password" 
-            element={!token ? <ForgotPassword /> : <Navigate to="/dashboard" />} 
+            element={!token ? <ForgotPassword /> : <Navigate to="/dashboard-main" />} 
           />
           <Route 
-            path="/dashboard" 
-            element={token ? <Home /> : <Navigate to="/login" />} 
+            path="/auth/success" 
+            element={<AuthSuccess />} 
           />
           <Route 
-            path="/comp/:id" 
-            element={token ? <AnalysisDetail /> : <Navigate to="/login" />} 
+            path="/dashboard-main" 
+            element={token ? <Dashboard /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/skills-profile" 
+            element={token ? <SkillsProfile /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/learning-path" 
+            element={token ? <LearningPath /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/progress-tracking" 
+            element={token ? <ProgressTracking /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/skill-analysis" 
+            element={token ? <SkillAnalysis /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/insights-reports" 
+            element={token ? <InsightsReports /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/" 
-            element={<Navigate to={token ? "/dashboard" : "/login"} />} 
+            element={<Navigate to={token ? "/dashboard-main" : "/login"} />} 
           />
         </Routes>
       </div>
