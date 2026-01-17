@@ -1,7 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+
 import useAuthStore from './store/authStore';
+
+import LandingPage from "./landing/LandingPage";
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +14,7 @@ import ProgressTracking from './pages/ProgressTracking';
 import SkillAnalysis from './pages/SkillAnalysis';
 import InsightsReports from './pages/InsightsReports';
 import ForgotPassword from './pages/ForgotPassword';
+
 import './index.css';
 
 function App() {
@@ -20,7 +24,12 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Toaster position="top-right" />
+
         <Routes>
+          {/* Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Auth Pages */}
           <Route 
             path="/signup" 
             element={!token ? <Signup /> : <Navigate to="/dashboard-main" />} 
@@ -33,6 +42,8 @@ function App() {
             path="/forgot-password" 
             element={!token ? <ForgotPassword /> : <Navigate to="/dashboard-main" />} 
           />
+
+          {/* Protected Dashboard Pages */}
           <Route 
             path="/dashboard-main" 
             element={token ? <Dashboard /> : <Navigate to="/login" />} 
@@ -56,10 +67,6 @@ function App() {
           <Route 
             path="/insights-reports" 
             element={token ? <InsightsReports /> : <Navigate to="/login" />} 
-          />
-          <Route 
-            path="/" 
-            element={<Navigate to={token ? "/dashboard-main" : "/login"} />} 
           />
         </Routes>
       </div>
