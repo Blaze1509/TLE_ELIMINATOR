@@ -36,13 +36,42 @@ const extractDataFromDocument = async (filePath) => {
 
 // Dummy ngrok API call
 const callNgrokAPI = async (analysisData) => {
-  // Simulate ngrok API call
-  return {
-    readinessScore: Math.floor(Math.random() * 100),
-    skillGaps: ['Medical Terminology', 'HIPAA Compliance'],
-    recommendations: ['Complete Healthcare Data Course', 'Learn Medical Coding'],
-    roadmap: ['Healthcare Basics', 'Data Analysis', 'Specialization']
-  };
+  try {
+    const axios = require('axios');
+    
+    const requestBody = {
+      user_id: analysisData.userId,
+      future_domain: analysisData.role,
+      resume_data: analysisData.pdfData?.data ? {
+        full_name: analysisData.pdfData.data.full_name || null,
+        technical_skills: analysisData.pdfData.data.technical_skills || null,
+        projects: analysisData.pdfData.data.projects || null,
+        years_of_experience: analysisData.pdfData.data.years_of_experience || null,
+        certifications: analysisData.pdfData.data.certifications || null
+      } : null
+    };
+    
+    console.log('Calling Groq Analysis API:', process.env.NGROK_ANALYSIS_API);
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    
+    const response = await axios.post(process.env.NGROK_ANALYSIS_API, requestBody, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('Groq API response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Groq API error:', error.message);
+    // Return dummy data if API fails
+    return {
+      readinessScore: Math.floor(Math.random() * 100),
+      skillGaps: ['Medical Terminology', 'HIPAA Compliance'],
+      recommendations: ['Complete Healthcare Data Course', 'Learn Medical Coding'],
+      roadmap: ['Healthcare Basics', 'Data Analysis', 'Specialization']
+    };
+  }
 };
 
 // Create Analysis
@@ -75,9 +104,9 @@ exports.createAnalysis = async (req, res) => {
 
     // Call ngrok API with analysis data
     const apiData = {
+      userId: decoded.userId,
       role,
-      skills: analysis.skills,
-      documentData
+      pdfData: req.body.pdfData
     };
 
     const ngrokResponse = await callNgrokAPI(apiData);

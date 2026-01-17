@@ -38,6 +38,8 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
     document: null
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [pdfAnalysisResult, setPdfAnalysisResult] = useState(null);
   const [skillSearch, setSkillSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showOtherSkillsModal, setShowOtherSkillsModal] = useState(false);
@@ -89,10 +91,40 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
   };
 
   const handleFileChange = (e) => {
+    const file = e.target.files[0];
     setFormData(prev => ({
       ...prev,
-      document: e.target.files[0]
+      document: file
     }));
+    // Reset PDF analysis result when new file is selected
+    setPdfAnalysisResult(null);
+  };
+
+  const handleFetchPdfData = async () => {
+    if (!formData.document) {
+      toast.error('Please select a PDF file first');
+      return;
+    }
+
+    setIsFetching(true);
+    try {
+      const pdfFormData = new FormData();
+      pdfFormData.append('pdf', formData.document);
+
+      const response = await apiClient.post('/pdf/analyze', pdfFormData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      setPdfAnalysisResult(response.data);
+      toast.success('PDF data fetched successfully!');
+    } catch (error) {
+      toast.error('Failed to analyze PDF: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setIsFetching(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -104,40 +136,45 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
 
     setIsLoading(true);
     try {
-      const submitData = new FormData();
-      submitData.append('role', formData.role);
-      
-      // Combine predefined and other skills
+      // Prepare data for Groq API
       const allSkills = [...formData.skills];
       if (formData.otherSkills) {
         const otherSkillsArray = formData.otherSkills.split(',').map(s => s.trim());
         allSkills.push(...otherSkillsArray);
       }
-      
-      submitData.append('skills', JSON.stringify(allSkills));
-      
-      if (formData.document) {
-        submitData.append('document', formData.document);
-      }
 
-      const response = await apiClient.post('/analysis/create', submitData, {
+      const analysisData = {
+        role: formData.role,
+        skills: allSkills,
+        pdfData: pdfAnalysisResult
+      };
+
+      console.log('Sending to Groq API:', analysisData);
+      
+      const response = await apiClient.post('/analysis/create', {
+        role: formData.role,
+        skills: JSON.stringify(allSkills),
+        pdfData: pdfAnalysisResult
+      }, {
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'application/json'
         }
       });
-
+      
       if (response.data.success) {
         toast.success('Analysis completed successfully!');
         onAnalysisComplete();
-        // Reset form
-        setFormData({
-          role: '',
-          skills: [],
-          otherSkills: '',
-          document: null
-        });
       }
+      
+      // Reset form
+      setFormData({
+        role: '',
+        skills: [],
+        otherSkills: '',
+        document: null
+      });
+      setPdfAnalysisResult(null);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Analysis failed');
     } finally {
@@ -166,6 +203,20 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
           <p className="text-xs text-gray-500 mt-1">
             Supported: PDF, DOC, DOCX, TXT, JPG, PNG
           </p>
+          
+          {/* Fetch Button - Show when document is uploaded */}
+          {formData.document && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleFetchPdfData}
+                disabled={isFetching}
+                className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 transition-colors"
+              >
+                {isFetching ? '🔄 Fetching...' : '📄 Fetch PDF Data'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Role Selection */}
