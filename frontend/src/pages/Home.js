@@ -1,69 +1,72 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import Header from '../components/Header';
+import SkillAnalysisForm from '../components/SkillAnalysisForm';
+import AnalysisCard from '../components/AnalysisCard';
+import apiClient from '../api/apiClient';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
 const Home = () => {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  const [analyses, setAnalyses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { token } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/login');
+  useEffect(() => {
+    fetchAnalyses();
+  }, []);
+
+  const fetchAnalyses = async () => {
+    try {
+      const response = await apiClient.get('/analysis/user-analyses', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setAnalyses(response.data.analyses);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch analyses');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAnalysisComplete = () => {
+    fetchAnalyses(); // Refresh the analyses list
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">🏠 Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                Welcome, <span className="font-medium">{user?.username}</span>
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <Header />
+      
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-            <div className="mb-8">
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                🎉 Welcome to Your Dashboard!
-              </h2>
-              <p className="text-xl text-gray-600 mb-8">
-                You have successfully logged in to your account.
-              </p>
+      <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        {/* Input Form Section */}
+        <SkillAnalysisForm onAnalysisComplete={handleAnalysisComplete} />
+        
+        {/* Output Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            📊 Your Skill Analyses
+          </h2>
+          
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading analyses...</p>
             </div>
-
-            <div className="bg-blue-50 rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">Account Information</h3>
-              <div className="space-y-2 text-blue-800">
-                <p><span className="font-medium">Username:</span> {user?.username}</p>
-                <p><span className="font-medium">Email:</span> {user?.email}</p>
-                <p><span className="font-medium">User ID:</span> {user?.id}</p>
-              </div>
+          ) : analyses.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600 mb-2">No analyses yet</p>
+              <p className="text-sm text-gray-500">Create your first skill analysis above</p>
             </div>
-
-            <div className="text-gray-500">
-              <p className="text-lg">This is your secure home page.</p>
-              <p className="mt-2">You can now access all the features of your account.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {analyses.map((analysis) => (
+                <AnalysisCard key={analysis._id} analysis={analysis} onDelete={fetchAnalyses} />
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

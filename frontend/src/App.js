@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import ForgotPassword from './pages/ForgotPassword';
+import AnalysisDetail from './pages/AnalysisDetail';
 import './index.css';
 
 function App() {
@@ -18,23 +19,27 @@ function App() {
         <Routes>
           <Route 
             path="/signup" 
-            element={!token ? <Signup /> : <Navigate to="/home" />} 
+            element={!token ? <Signup /> : <Navigate to="/dashboard" />} 
           />
           <Route 
             path="/login" 
-            element={!token ? <Login /> : <Navigate to="/home" />} 
+            element={!token ? <Login /> : <Navigate to="/dashboard" />} 
           />
           <Route 
             path="/forgot-password" 
-            element={!token ? <ForgotPassword /> : <Navigate to="/home" />} 
+            element={!token ? <ForgotPassword /> : <Navigate to="/dashboard" />} 
           />
           <Route 
-            path="/home" 
+            path="/dashboard" 
             element={token ? <Home /> : <Navigate to="/login" />} 
           />
           <Route 
+            path="/comp/:id" 
+            element={token ? <AnalysisDetail /> : <Navigate to="/login" />} 
+          />
+          <Route 
             path="/" 
-            element={<Navigate to={token ? "/home" : "/login"} />} 
+            element={<Navigate to={token ? "/dashboard" : "/login"} />} 
           />
         </Routes>
       </div>
