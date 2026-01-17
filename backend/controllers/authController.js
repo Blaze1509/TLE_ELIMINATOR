@@ -31,6 +31,7 @@ exports.signup = async (req, res) => {
     }
 
     const { username, email, password } = req.body;
+    console.log('📝 Signup attempt:', { username, email });
 
     // Check if user exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -44,13 +45,16 @@ exports.signup = async (req, res) => {
     // Create user
     const user = new User({ username, email, password });
     await user.save();
+    console.log('✅ User created:', user._id);
 
     res.status(201).json({
       success: true,
       message: 'Account created successfully! Please login.'
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Server error' });
+    console.error('❌ Signup error:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 };
 
@@ -63,17 +67,26 @@ exports.login = async (req, res) => {
     }
 
     const { username, password } = req.body;
+    console.log('🔐 Login attempt:', { username });
 
     // Find user by username or email
     const user = await User.findOne({ 
       $or: [{ username }, { email: username }] 
     });
 
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
+      console.log('❌ User not found:', username);
+      return res.status(400).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      console.log('❌ Invalid password for user:', username);
       return res.status(400).json({ success: false, error: 'Invalid credentials' });
     }
 
     const token = generateToken(user._id);
+    console.log('✅ Login successful:', user._id);
 
     res.json({
       success: true,
@@ -85,7 +98,9 @@ exports.login = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Server error' });
+    console.error('❌ Login error:', error.message);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 };
 
