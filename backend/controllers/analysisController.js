@@ -1,76 +1,31 @@
-const Analysis = require('../models/Analysis');
+const CareerAnalysis = require('../models/CareerAnalysis');
 const jwt = require('jsonwebtoken');
-const multer = require('multer');
-const path = require('path');
+const axios = require('axios');
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /pdf|doc|docx|txt|jpg|jpeg|png/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only documents and images are allowed'));
-    }
-  }
-});
-
-// Dummy RAG API call
-const extractDataFromDocument = async (filePath) => {
-  // Simulate RAG model API call
-  return "Extracted skills: Machine Learning, Data Analysis, Python, Healthcare Analytics";
-};
-
-// Dummy ngrok API call
-const callNgrokAPI = async (analysisData) => {
+// Call model analyze API
+const callAnalyzeAPI = async (data) => {
   try {
-    const axios = require('axios');
+    console.log('🚀 Calling analyze API:', process.env.MODEL_ANALYZE_URL);
+    console.log('📤 Request data:', JSON.stringify(data, null, 2));
     
-    const requestBody = {
-      user_id: analysisData.userId,
-      future_domain: analysisData.role,
-      resume_data: analysisData.pdfData?.data ? {
-        full_name: analysisData.pdfData.data.full_name || null,
-        technical_skills: analysisData.pdfData.data.technical_skills || null,
-        projects: analysisData.pdfData.data.projects || null,
-        years_of_experience: analysisData.pdfData.data.years_of_experience || null,
-        certifications: analysisData.pdfData.data.certifications || null
-      } : null
-    };
-    
-    console.log('Calling Groq Analysis API:', process.env.NGROK_ANALYSIS_API);
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
-    
-    const response = await axios.post(process.env.NGROK_ANALYSIS_API, requestBody, {
+    const response = await axios.post(process.env.MODEL_ANALYZE_URL, data, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      },
+      timeout: 30000
     });
     
-    console.log('Groq API response:', response.data);
+    console.log('📥 ANALYZE API RESPONSE:');
+    console.log('Status:', response.status);
+    console.log('Headers:', response.headers);
+    console.log('Data:', JSON.stringify(response.data, null, 2));
     return response.data;
   } catch (error) {
-    console.error('Groq API error:', error.message);
-    // Return dummy data if API fails
-    return {
-      readinessScore: Math.floor(Math.random() * 100),
-      skillGaps: ['Medical Terminology', 'HIPAA Compliance'],
-      recommendations: ['Complete Healthcare Data Course', 'Learn Medical Coding'],
-      roadmap: ['Healthcare Basics', 'Data Analysis', 'Specialization']
-    };
+    console.error('❌ Analyze API error:', error.message);
+    console.error('Error status:', error.response?.status);
+    console.error('Error data:', error.response?.data);
+    return null;
   }
 };
 
@@ -83,12 +38,12 @@ exports.getUserStats = async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const analyses = await Analysis.find({ userId: decoded.userId });
-    const completedAnalyses = analyses.filter(a => a.status === 'completed');
+    const careerAnalyses = await CareerAnalysis.find({ userId: decoded.userId });
+    const completedAnalyses = careerAnalyses.filter(a => a.analysis_completed);
     
     const stats = {
-      readinessScore: completedAnalyses.length > 0 ? completedAnalyses[completedAnalyses.length - 1].analysisResult.readinessScore : 0,
-      totalAnalyses: analyses.length,
+      readinessScore: completedAnalyses.length > 0 ? (100 - completedAnalyses[completedAnalyses.length - 1].gap_percentage) : 0,
+      totalAnalyses: careerAnalyses.length,
       skillsCount: 0,
       completedAnalyses: completedAnalyses.length
     };
@@ -109,44 +64,64 @@ exports.createAnalysis = async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { role, skills } = req.body;
+    const { career_goal, additional_skills, careerAnalysisId } = req.body;
     
-    let documentData = null;
-    
-    // If file uploaded, extract data using RAG
-    if (req.file) {
-      documentData = await extractDataFromDocument(req.file.path);
+    // Find the CareerAnalysis entry by ID or latest one
+    let careerAnalysis;
+    if (careerAnalysisId) {
+      careerAnalysis = await CareerAnalysis.findOne({ 
+        _id: careerAnalysisId, 
+        userId: decoded.userId 
+      });
+    } else {
+      careerAnalysis = await CareerAnalysis.findOne({ 
+        userId: decoded.userId,
+        predict_completed: true,
+        analysis_completed: false
+      }).sort({ createdAt: -1 });
     }
 
-    // Create analysis record
-    const analysis = new Analysis({
-      userId: decoded.userId,
-      role,
-      skills: Array.isArray(skills) ? skills : skills.split(',').map(s => s.trim()),
-      documentData
-    });
+    if (!careerAnalysis) {
+      return res.status(400).json({ success: false, error: 'No PDF uploaded. Please upload resume first.' });
+    }
 
-    await analysis.save();
+    // Update with additional data
+    careerAnalysis.career_goal = career_goal || careerAnalysis.career_goal || 'Healthcare Professional';
+    careerAnalysis.additional_skills = additional_skills || careerAnalysis.additional_skills;
 
-    // Call ngrok API with analysis data
-    const apiData = {
-      userId: decoded.userId,
-      role,
-      pdfData: req.body.pdfData
+    // Call analyze API
+    const analyzeData = {
+      career_goal: careerAnalysis.career_goal,
+      resume_data: careerAnalysis.resume_data,
+      additional_skills: careerAnalysis.additional_skills
     };
+    
+    const analyzeResponse = await callAnalyzeAPI(analyzeData);
+    if (analyzeResponse) {
+      careerAnalysis.career_goal = analyzeResponse.career_goal || careerAnalysis.career_goal;
+      careerAnalysis.current_skills = analyzeResponse.current_skills || [];
+      careerAnalysis.required_skills = analyzeResponse.required_skills || [];
+      careerAnalysis.matching_skills = analyzeResponse.matching_skills || [];
+      careerAnalysis.skill_gap = analyzeResponse.skill_gap || [];
+      careerAnalysis.gap_percentage = analyzeResponse.gap_percentage || 0;
+      careerAnalysis.recommendations = analyzeResponse.recommendations || '';
+      careerAnalysis.analysis_completed = true;
+    }
 
-    const ngrokResponse = await callNgrokAPI(apiData);
-
-    // Update analysis with results
-    analysis.analysisResult = ngrokResponse;
-    analysis.status = 'completed';
-    await analysis.save();
+    await careerAnalysis.save();
 
     res.json({
       success: true,
-      message: 'Analysis completed successfully',
-      analysisId: analysis._id,
-      result: ngrokResponse
+      message: 'Career analysis completed successfully',
+      careerAnalysisId: careerAnalysis._id,
+      result: {
+        current_skills: careerAnalysis.current_skills,
+        required_skills: careerAnalysis.required_skills,
+        matching_skills: careerAnalysis.matching_skills,
+        skill_gap: careerAnalysis.skill_gap,
+        gap_percentage: careerAnalysis.gap_percentage,
+        recommendations: careerAnalysis.recommendations
+      }
     });
 
   } catch (error) {
@@ -155,7 +130,7 @@ exports.createAnalysis = async (req, res) => {
   }
 };
 
-// Get all analyses for user
+// Get all career analyses for user
 exports.getUserAnalyses = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -165,12 +140,12 @@ exports.getUserAnalyses = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    const analyses = await Analysis.find({ userId: decoded.userId })
+    const careerAnalyses = await CareerAnalysis.find({ userId: decoded.userId })
       .sort({ createdAt: -1 });
 
     res.json({
       success: true,
-      analyses
+      analyses: careerAnalyses
     });
 
   } catch (error) {
@@ -179,7 +154,7 @@ exports.getUserAnalyses = async (req, res) => {
   }
 };
 
-// Get single analysis
+// Get single career analysis
 exports.getAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,18 +166,18 @@ exports.getAnalysis = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    const analysis = await Analysis.findOne({ 
+    const careerAnalysis = await CareerAnalysis.findOne({ 
       _id: id, 
       userId: decoded.userId 
     });
 
-    if (!analysis) {
-      return res.status(404).json({ success: false, error: 'Analysis not found' });
+    if (!careerAnalysis) {
+      return res.status(404).json({ success: false, error: 'Career analysis not found' });
     }
 
     res.json({
       success: true,
-      analysis
+      analysis: careerAnalysis
     });
 
   } catch (error) {
@@ -211,7 +186,7 @@ exports.getAnalysis = async (req, res) => {
   }
 };
 
-// Delete Analysis
+// Delete Career Analysis
 exports.deleteAnalysis = async (req, res) => {
   try {
     const { id } = req.params;
@@ -223,18 +198,18 @@ exports.deleteAnalysis = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    const analysis = await Analysis.findOneAndDelete({ 
+    const careerAnalysis = await CareerAnalysis.findOneAndDelete({ 
       _id: id, 
       userId: decoded.userId 
     });
 
-    if (!analysis) {
-      return res.status(404).json({ success: false, error: 'Analysis not found' });
+    if (!careerAnalysis) {
+      return res.status(404).json({ success: false, error: 'Career analysis not found' });
     }
 
     res.json({
       success: true,
-      message: 'Analysis deleted successfully'
+      message: 'Career analysis deleted successfully'
     });
 
   } catch (error) {
@@ -242,5 +217,3 @@ exports.deleteAnalysis = async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to delete analysis' });
   }
 };
-
-exports.upload = upload;

@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
 const pdfRoutes = require('./routes/pdfRoutes');
+const careerAnalysisRoutes = require('./routes/careerAnalysisRoutes');
 
 const app = express();
 
@@ -55,6 +56,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/pdf', pdfRoutes);
+app.use('/api/career-analysis', careerAnalysisRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

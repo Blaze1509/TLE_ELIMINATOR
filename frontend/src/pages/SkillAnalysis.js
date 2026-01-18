@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, AlertCircle, Check, X, Target, Zap, TrendingDown, Award, Lightbulb, ArrowUp } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import SkillAnalysisForm from '../components/SkillAnalysisForm';
 import useAuthStore from '../store/authStore';
 import { api } from '../api/apiClient';
 import toast from 'react-hot-toast';
@@ -31,22 +32,25 @@ const SkillAnalysis = () => {
   };
 
   // Real data from API or defaults
+  const latestAnalysis = analyses.length > 0 ? analyses[0] : null;
+  const careerAnalysis = latestAnalysis?.analysisResult?.careerAnalysis || {};
+  
   const readinessData = {
-    role: 'Health Informatics Engineer',
-    overallReadiness: analyses.length > 0 ? analyses[0].analysisResult?.readinessScore || 0 : 0,
-    level: 'Not analyzed yet',
-    requiredSkillsCovered: 0,
-    totalRequiredSkills: 11,
-    lastUpdated: new Date().toISOString().split('T')[0]
+    role: latestAnalysis?.role || 'Health Informatics Engineer',
+    overallReadiness: latestAnalysis?.analysisResult?.readinessScore || 0,
+    level: latestAnalysis ? getReadinessLevel(latestAnalysis.analysisResult.readinessScore) : 'Not analyzed yet',
+    requiredSkillsCovered: careerAnalysis.strongSkills?.length || 0,
+    totalRequiredSkills: (careerAnalysis.missingSkills?.length || 0) + (careerAnalysis.weakSkills?.length || 0) + (careerAnalysis.strongSkills?.length || 0) || 11,
+    lastUpdated: latestAnalysis ? new Date(latestAnalysis.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
   };
 
-  const missingSkills = [];
-  const weakSkills = [];
-  const strongSkills = [];
-  const skillImportance = [];
-  const aiExplanations = [];
-  const recommendedActions = [];
-  const historicalData = [];
+  const missingSkills = careerAnalysis.missingSkills || [];
+  const weakSkills = careerAnalysis.weakSkills || [];
+  const strongSkills = careerAnalysis.strongSkills || [];
+  const skillImportance = careerAnalysis.skillImportance || [];
+  const aiExplanations = careerAnalysis.aiExplanations || [];
+  const recommendedActions = careerAnalysis.recommendedActions || [];
+  const historicalData = careerAnalysis.historicalData || [];
 
 
   const handleLogout = () => {
@@ -157,6 +161,12 @@ const SkillAnalysis = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto py-8 px-8">
+            {/* Skill Analysis Form */}
+            <SkillAnalysisForm onAnalysisComplete={fetchUserAnalyses} />
+            
+            {/* Show results only if analyses exist */}
+            {analyses.length > 0 ? (
+              <>
             {/* 1. Career Readiness Overview */}
             <Card className="shadow-lg border-0 mb-8 bg-gradient-to-r from-indigo-50 to-blue-50">
               <CardHeader>
@@ -525,6 +535,14 @@ const SkillAnalysis = () => {
                 Export Full Analysis
               </Button>
             </div>
+              </>
+        ) : (
+          <div className="text-center py-12">
+            <Target className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Complete Your First Analysis</h3>
+            <p className="text-gray-600">Fill out the form above to get your personalized skill analysis and career insights.</p>
+          </div>
+        )}
           </div>
         </div>
       </div>

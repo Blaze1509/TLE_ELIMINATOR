@@ -17,11 +17,22 @@ const Dashboard = () => {
     skillsCount: 0,
     completedAnalyses: 0
   });
+  const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchUserStats();
+    fetchUserAnalyses();
   }, []);
+
+  const fetchUserAnalyses = async () => {
+    try {
+      const response = await api.getUserAnalyses();
+      setAnalyses(response.data);
+    } catch (error) {
+      console.error('Error fetching analyses:', error);
+    }
+  };
 
   const fetchUserStats = async () => {
     try {
@@ -36,23 +47,29 @@ const Dashboard = () => {
   };
 
   // Real data from API
+  const latestAnalysis = analyses.length > 0 ? analyses[0] : null;
+  const careerAnalysis = latestAnalysis?.analysisResult?.careerAnalysis || {};
   const readinessScore = stats.readinessScore || 0;
-  const targetRole = 'Health Informatics Engineer';
+  const targetRole = latestAnalysis?.role || 'Health Informatics Engineer';
   const roleDescription = 'Design healthcare IT systems with FHIR, HL7, and HIPAA compliance';
   
   const skillsStats = {
-    total: stats.skillsCount || 0,
-    beginner: 0,
-    intermediate: 0,
-    advanced: 0
+    total: latestAnalysis?.skills?.length || 0,
+    beginner: careerAnalysis.weakSkills?.filter(s => s.currentLevel === 'Beginner').length || 0,
+    intermediate: careerAnalysis.weakSkills?.filter(s => s.currentLevel === 'Intermediate').length || 0,
+    advanced: careerAnalysis.strongSkills?.length || 0
   };
 
   const skillGaps = {
-    missing: 0,
-    weak: 0
+    missing: careerAnalysis.missingSkills?.length || 0,
+    weak: careerAnalysis.weakSkills?.length || 0
   };
 
-  const radarData = [
+  const radarData = careerAnalysis.skillImportance?.slice(0, 5).map(item => ({
+    skill: item.skill,
+    required: item.importance,
+    current: item.userLevel
+  })) || [
     { skill: 'FHIR', required: 90, current: 0 },
     { skill: 'HL7', required: 85, current: 0 },
     { skill: 'SQL', required: 80, current: 0 },
@@ -60,7 +77,13 @@ const Dashboard = () => {
     { skill: 'Data Analytics', required: 75, current: 0 }
   ];
 
-  const nextActions = [];
+  const nextActions = careerAnalysis.recommendedActions?.slice(0, 3).map(action => ({
+    id: action.rank,
+    skill: action.skill,
+    type: 'Course',
+    priority: action.priority,
+    icon: action.rank === 1 ? '🎯' : action.rank === 2 ? '📚' : '⚡'
+  })) || [];
 
   const progressData = [
     { week: 'Week 1', readiness: 0 },

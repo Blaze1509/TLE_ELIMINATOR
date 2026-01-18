@@ -32,6 +32,7 @@ const predefinedSkills = [
 
 const SkillAnalysisForm = ({ onAnalysisComplete }) => {
   const [formData, setFormData] = useState({
+    mode: 'combined',
     role: '',
     skills: [],
     otherSkills: '',
@@ -152,6 +153,7 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
       console.log('Sending to Groq API:', analysisData);
       
       const response = await apiClient.post('/analysis/create', {
+        mode: formData.mode,
         role: formData.role,
         skills: JSON.stringify(allSkills),
         pdfData: pdfAnalysisResult
@@ -169,6 +171,7 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
       
       // Reset form
       setFormData({
+        mode: 'combined',
         role: '',
         skills: [],
         otherSkills: '',
@@ -189,35 +192,90 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Document Upload */}
+        {/* Mode Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Document (Optional)
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Analysis Mode *
           </label>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Supported: PDF, DOC, DOCX, TXT, JPG, PNG
-          </p>
-          
-          {/* Fetch Button - Show when document is uploaded */}
-          {formData.document && (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={handleFetchPdfData}
-                disabled={isFetching}
-                className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 transition-colors"
-              >
-                {isFetching ? '🔄 Fetching...' : '📄 Fetch PDF Data'}
-              </button>
+          <div className="grid grid-cols-3 gap-3">
+            <div
+              onClick={() => setFormData(prev => ({ ...prev, mode: 'skills-only' }))}
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.mode === 'skills-only'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">🎯</div>
+                <h3 className="font-semibold text-sm">Skills Only</h3>
+                <p className="text-xs text-gray-600 mt-1">Analyze based on your current skills</p>
+              </div>
             </div>
-          )}
+            
+            <div
+              onClick={() => setFormData(prev => ({ ...prev, mode: 'resume-only' }))}
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.mode === 'resume-only'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">📄</div>
+                <h3 className="font-semibold text-sm">Resume Only</h3>
+                <p className="text-xs text-gray-600 mt-1">Analyze based on your resume/CV</p>
+              </div>
+            </div>
+            
+            <div
+              onClick={() => setFormData(prev => ({ ...prev, mode: 'combined' }))}
+              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                formData.mode === 'combined'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-2xl mb-2">🚀</div>
+                <h3 className="font-semibold text-sm">Combined</h3>
+                <p className="text-xs text-gray-600 mt-1">Most comprehensive analysis</p>
+              </div>
+            </div>
+          </div>
         </div>
+        {/* Document Upload - Show for resume-only and combined modes */}
+        {(formData.mode === 'resume-only' || formData.mode === 'combined') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Upload Document {formData.mode === 'resume-only' ? '*' : '(Optional)'}
+            </label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required={formData.mode === 'resume-only'}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Supported: PDF, DOC, DOCX, TXT, JPG, PNG
+            </p>
+            
+            {/* Fetch Button - Show when document is uploaded */}
+            {formData.document && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={handleFetchPdfData}
+                  disabled={isFetching}
+                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 transition-colors"
+                >
+                  {isFetching ? '🔄 Fetching...' : '📄 Fetch PDF Data'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Role Selection */}
         <div>
@@ -244,11 +302,12 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
           </div>
         </div>
 
-        {/* Skills Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Current Skills
-          </label>
+        {/* Skills Selection - Show for skills-only and combined modes */}
+        {(formData.mode === 'skills-only' || formData.mode === 'combined') && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Current Skills {formData.mode === 'skills-only' ? '*' : ''}
+            </label>
           
           {/* Skills Dropdown */}
           <div className="relative mb-3">
@@ -347,7 +406,8 @@ const SkillAnalysisForm = ({ onAnalysisComplete }) => {
             </div>
           )}
 
-        </div>
+          </div>
+        )}
 
         {/* Other Skills Modal */}
         {showOtherSkillsModal && (

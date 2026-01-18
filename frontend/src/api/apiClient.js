@@ -26,6 +26,11 @@ export const api = {
   // Analysis
   createAnalysis: (data) => apiClient.post('/analysis', data),
   getAnalysis: (id) => apiClient.get(`/analysis/${id}`),
+  
+  // Career Analysis
+  createCareerAnalysis: (data) => apiClient.post('/career-analysis/create', data),
+  getUserCareerAnalyses: () => apiClient.get('/career-analysis/user'),
+  getCareerAnalysis: (id) => apiClient.get(`/career-analysis/${id}`),
 };
 
 export default apiClient;

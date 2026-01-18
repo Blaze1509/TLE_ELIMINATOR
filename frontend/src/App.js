@@ -12,6 +12,7 @@ import ProgressTracking from './pages/ProgressTracking';
 import SkillAnalysis from './pages/SkillAnalysis';
 import InsightsReports from './pages/InsightsReports';
 import ForgotPassword from './pages/ForgotPassword';
+import CareerPathway from './components/career/CareerPathway';
 import './index.css';
 
 function App() {
@@ -61,6 +62,10 @@ function App() {
           <Route 
             path="/insights-reports" 
             element={token ? <InsightsReports /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/career-pathway" 
+            element={token ? <CareerPathway /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/" 

@@ -6,7 +6,8 @@ const router = express.Router();
 // Routes
 router.get('/stats', analysisController.getUserStats);
 router.get('/user', analysisController.getUserAnalyses);
-router.post('/', analysisController.upload.single('document'), analysisController.createAnalysis);
+router.post('/create', analysisController.createAnalysis);
+router.post('/', analysisController.createAnalysis);
 router.get('/:id', analysisController.getAnalysis);
 router.delete('/:id', analysisController.deleteAnalysis);
 
