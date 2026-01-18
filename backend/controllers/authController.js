@@ -1,7 +1,9 @@
 const User = require('../models/User');
+const CareerAnalysis = require('../models/CareerAnalysis');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { validationResult } = require('express-validator');
+const axios = require('axios');
 
 // Email transporter
 const transporter = nodemailer.createTransport({
@@ -193,5 +195,80 @@ exports.resetPassword = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// Submit Profile
+exports.submitProfile = async (req, res) => {
+  try {
+    console.log('📝 Profile submission request:', req.body);
+    const { skills, careerGoal } = req.body;
+    const userId = req.user.userId;
+    console.log('👤 User ID:', userId);
+
+    // Find the latest CareerAnalysis with predict_completed = true
+    const existingAnalysis = await CareerAnalysis.findOne({ 
+      userId, 
+      predict_completed: true,
+      analysis_completed: false 
+    }).sort({ createdAt: -1 });
+
+    console.log('📊 Found analysis:', existingAnalysis ? 'Yes' : 'No');
+    if (!existingAnalysis) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please analyze a document first' 
+      });
+    }
+
+    // Update with additional skills and career goal
+    existingAnalysis.additional_skills = skills;
+    existingAnalysis.career_goal = careerGoal;
+    await existingAnalysis.save();
+    console.log('✅ Analysis updated with user data');
+
+    // Prepare data for /analyze-career-gap endpoint
+    const gapAnalysisData = {
+      skills: skills,
+      career_goal: careerGoal,
+      resume_data: existingAnalysis.resume_data
+    };
+    console.log('🔄 Sending to gap analysis:', process.env.MODEL_ANALYZE_URL);
+    console.log('📤 Gap analysis data:', JSON.stringify(gapAnalysisData, null, 2));
+
+    const response = await axios.post(process.env.MODEL_ANALYZE_URL, gapAnalysisData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('📈 Gap analysis response received');
+    
+    // Update analysis with gap analysis results - only update empty/missing fields
+    if (!existingAnalysis.skill_gap || existingAnalysis.skill_gap.length === 0) {
+      existingAnalysis.skill_gap = response.data.skill_gap;
+    }
+    if (!existingAnalysis.gap_percentage) {
+      existingAnalysis.gap_percentage = response.data.gap_percentage;
+    }
+    if (!existingAnalysis.recommendations) {
+      existingAnalysis.recommendations = response.data.recommendations;
+    }
+    existingAnalysis.analysis_completed = true;
+    await existingAnalysis.save();
+    console.log('✅ Final analysis saved');
+
+    res.json({
+      success: true,
+      message: 'Profile submitted and analyzed successfully',
+      analysisId: existingAnalysis._id
+    });
+  } catch (error) {
+    console.error('❌ Profile submission error:', error.message);
+    if (error.response) {
+      console.error('📊 API Response Status:', error.response.status);
+      console.error('📊 API Response Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    console.error('Stack:', error.stack);
+    res.status(500).json({ success: false, error: 'Failed to submit profile' });
   }
 };

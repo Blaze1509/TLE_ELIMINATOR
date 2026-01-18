@@ -52,6 +52,10 @@ const Home = () => {
       navigate('/skills-profile');
     } else if (itemId === 'skill-analysis') {
       navigate('/dashboard');
+    } else if (itemId === 'settings') {
+      navigate('/settings');
+    } else if (itemId === 'help') {
+      navigate('/help-support');
     } else {
       setActiveSection(itemId);
     }

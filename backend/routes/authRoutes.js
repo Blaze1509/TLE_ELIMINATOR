@@ -6,6 +6,24 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
+// JWT middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Access token required' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ success: false, error: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
 // Generate JWT token
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -29,6 +47,9 @@ router.post('/login', loginValidation, authController.login);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/verify-otp', authController.verifyOTP);
 router.post('/reset-password', authController.resetPassword);
+
+// Profile routes
+router.post('/profile/submit', authenticateToken, authController.submitProfile);
 
 // Google OAuth routes
 router.get('/google', passport.authenticate('google', {

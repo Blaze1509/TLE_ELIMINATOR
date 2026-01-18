@@ -1,7 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+
 import useAuthStore from './store/authStore';
+
+import LandingPage from "./landing/LandingPage";
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import AuthSuccess from './pages/AuthSuccess';
@@ -11,8 +14,9 @@ import LearningPath from './pages/LearningPath';
 import ProgressTracking from './pages/ProgressTracking';
 import SkillAnalysis from './pages/SkillAnalysis';
 import InsightsReports from './pages/InsightsReports';
+import Settings from './pages/Settings';
+import HelpSupport from './pages/HelpSupport';
 import ForgotPassword from './pages/ForgotPassword';
-import CareerPathway from './components/career/CareerPathway';
 import './index.css';
 
 function App() {
@@ -22,7 +26,12 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Toaster position="top-right" />
+
         <Routes>
+          {/* Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Auth Pages */}
           <Route 
             path="/signup" 
             element={!token ? <Signup /> : <Navigate to="/dashboard-main" />} 
@@ -35,6 +44,8 @@ function App() {
             path="/forgot-password" 
             element={!token ? <ForgotPassword /> : <Navigate to="/dashboard-main" />} 
           />
+
+          {/* Protected Dashboard Pages */}
           <Route 
             path="/auth/success" 
             element={<AuthSuccess />} 
@@ -63,13 +74,17 @@ function App() {
             path="/insights-reports" 
             element={token ? <InsightsReports /> : <Navigate to="/login" />} 
           />
-          <Route 
+          {/* <Route 
             path="/career-pathway" 
             element={token ? <CareerPathway /> : <Navigate to="/login" />} 
+          /> */}
+          <Route 
+            path="/settings" 
+            element={token ? <Settings /> : <Navigate to="/login" />} 
           />
           <Route 
-            path="/" 
-            element={<Navigate to={token ? "/dashboard-main" : "/login"} />} 
+            path="/help-support" 
+            element={token ? <HelpSupport /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>
