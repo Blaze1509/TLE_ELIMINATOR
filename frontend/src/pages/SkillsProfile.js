@@ -11,16 +11,45 @@ const SkillsProfile = () => {
   const { user, token, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('skills-profile');
   
+  // State for profile editing
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedEmail, setEditedEmail] = useState('');
+  
   // State for skills management
   const [skills, setSkills] = useState([]);
-  const [newSkillName, setNewSkillName] = useState('');
+  const [selectedSkill, setSelectedSkill] = useState('');
+  const [customSkill, setCustomSkill] = useState('');
   const [newSkillLevel, setNewSkillLevel] = useState('Beginner');
   const [showAddSkill, setShowAddSkill] = useState(false);
   
   // State for career goal
   const [careerGoal, setCareerGoal] = useState('Health Informatics Engineer');
+  const [selectedCareerGoal, setSelectedCareerGoal] = useState('Health Informatics Engineer');
+  const [customCareerGoals, setCustomCareerGoals] = useState([]);
+  const [customGoalInput, setCustomGoalInput] = useState('');
   const [isEditingGoal, setIsEditingGoal] = useState(false);
-  const [tempGoal, setTempGoal] = useState(careerGoal);
+  
+  // Predefined skills list
+  const healthcareSkills = [
+    'Electronic Health Records (EHR)', 'FHIR', 'HL7', 'HIPAA Compliance', 'Medical Coding (ICD-10)', 
+    'Clinical Data Analysis', 'Healthcare Analytics', 'Telemedicine', 'Medical Imaging', 'Laboratory Information Systems',
+    'Pharmacy Management Systems', 'Clinical Decision Support', 'Healthcare Quality Metrics', 'Patient Safety',
+    'Medical Device Integration', 'Healthcare Interoperability', 'Clinical Workflow Optimization', 'Healthcare IT Security',
+    'Population Health Management', 'Healthcare Data Mining', 'Clinical Research', 'Biomedical Informatics',
+    'Healthcare Project Management', 'Medical Terminology', 'Others'
+  ];
+  
+  // Predefined career goals list
+  const healthcareCareers = [
+    'Health Informatics Engineer', 'Clinical Data Analyst', 'Healthcare IT Specialist', 'Medical Software Developer',
+    'Healthcare Systems Administrator', 'Clinical Research Coordinator', 'Healthcare Data Scientist', 'Telemedicine Specialist',
+    'Healthcare Quality Analyst', 'Medical Device Engineer', 'Healthcare Compliance Officer', 'Clinical Informatics Specialist',
+    'Healthcare Project Manager', 'Biomedical Engineer', 'Healthcare Consultant', 'Medical Records Manager',
+    'Healthcare Database Administrator', 'Clinical Applications Analyst', 'Healthcare Security Specialist', 'Medical Imaging Technologist',
+    'Healthcare Business Analyst', 'Clinical Systems Analyst', 'Healthcare Network Administrator', 'Medical Research Scientist',
+    'Others'
+  ];
   
   // State for certificates/documents
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -37,6 +66,24 @@ const SkillsProfile = () => {
     completionRate: 68
   };
 
+  const handleEditProfile = () => {
+    setEditedName(profileInfo.fullName);
+    setEditedEmail(profileInfo.email);
+    setIsEditingProfile(true);
+  };
+
+  const handleSaveProfile = () => {
+    // Here you would typically update the user profile via API
+    toast.success('Profile updated successfully!');
+    setIsEditingProfile(false);
+  };
+
+  const handleCancelProfileEdit = () => {
+    setIsEditingProfile(false);
+    setEditedName('');
+    setEditedEmail('');
+  };
+
   const skillsByLevel = {
     beginner: skills.filter(s => s.level === 'Beginner').length,
     intermediate: skills.filter(s => s.level === 'Intermediate').length,
@@ -44,23 +91,48 @@ const SkillsProfile = () => {
   };
 
   const handleAddSkill = () => {
-    if (newSkillName.trim() === '') {
-      toast.error('Please enter a skill name');
-      return;
+    let skillName = '';
+    
+    if (selectedSkill === 'Others') {
+      if (customSkill.trim() === '') {
+        toast.error('Please enter custom skills');
+        return;
+      }
+      // Handle multiple skills separated by commas
+      const customSkills = customSkill.split(',').map(s => s.trim()).filter(s => s);
+      
+      customSkills.forEach(skill => {
+        const newSkill = {
+          id: Math.max(...skills.map(s => s.id), 0) + Math.random(),
+          name: skill,
+          level: newSkillLevel,
+          proficiency: newSkillLevel === 'Beginner' ? 25 : newSkillLevel === 'Intermediate' ? 50 : 75
+        };
+        setSkills(prev => [...prev, newSkill]);
+      });
+      
+      toast.success(`${customSkills.length} skill(s) added!`);
+      setCustomSkill('');
+    } else {
+      if (selectedSkill === '') {
+        toast.error('Please select a skill');
+        return;
+      }
+      
+      const newSkill = {
+        id: Math.max(...skills.map(s => s.id), 0) + 1,
+        name: selectedSkill,
+        level: newSkillLevel,
+        proficiency: newSkillLevel === 'Beginner' ? 25 : newSkillLevel === 'Intermediate' ? 50 : 75
+      };
+      
+      setSkills([...skills, newSkill]);
+      toast.success(`${selectedSkill} added to your skills!`);
     }
-
-    const newSkill = {
-      id: Math.max(...skills.map(s => s.id), 0) + 1,
-      name: newSkillName,
-      level: newSkillLevel,
-      proficiency: newSkillLevel === 'Beginner' ? 25 : newSkillLevel === 'Intermediate' ? 50 : 75
-    };
-
-    setSkills([...skills, newSkill]);
-    setNewSkillName('');
+    
+    setSelectedSkill('');
     setNewSkillLevel('Beginner');
     setShowAddSkill(false);
-    toast.success(`${newSkillName} added to your skills!`);
   };
 
   const handleDeleteSkill = (id) => {
@@ -70,11 +142,19 @@ const SkillsProfile = () => {
   };
 
   const handleSaveGoal = () => {
-    if (tempGoal.trim() === '') {
-      toast.error('Please enter a career goal');
-      return;
+    if (selectedCareerGoal === 'Others') {
+      if (customGoalInput.trim() === '') {
+        toast.error('Please enter a custom career goal');
+        return;
+      }
+      // Add to custom goals list and set as current goal
+      const newGoals = customGoalInput.split(',').map(g => g.trim()).filter(g => g);
+      setCustomCareerGoals(prev => [...prev, ...newGoals]);
+      setCareerGoal(newGoals[0]); // Set first goal as current
+      setCustomGoalInput('');
+    } else {
+      setCareerGoal(selectedCareerGoal);
     }
-    setCareerGoal(tempGoal);
     setIsEditingGoal(false);
     toast.success('Career goal updated!');
   };
@@ -224,9 +304,7 @@ const SkillsProfile = () => {
     { id: 'skill-analysis', label: 'Skill Analysis', icon: BookOpen },
     { id: 'learning-path', label: 'Learning Path', icon: Map },
     { id: 'progress-tracking', label: 'Progress Tracking', icon: TrendingUp },
-    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Help & Support', icon: HelpCircle }
+    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 }
   ];
 
   const handleMenuClick = (itemId) => {
@@ -340,14 +418,47 @@ const SkillsProfile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {/* Profile Info */}
                   <div className="space-y-5">
-                    <div>
-                      <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Full Name</p>
-                      <p className="text-lg font-bold text-white mt-1">{profileInfo.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Email</p>
-                      <p className="text-sm text-zinc-300 mt-1">{profileInfo.email}</p>
-                    </div>
+                    {isEditingProfile ? (
+                      <>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold mb-2">Full Name</p>
+                          <input
+                            type="text"
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold mb-2">Email</p>
+                          <input
+                            type="email"
+                            value={editedEmail}
+                            onChange={(e) => setEditedEmail(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={handleSaveProfile} className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white" size="sm">
+                            Save
+                          </Button>
+                          <Button onClick={handleCancelProfileEdit} className="flex-1 bg-zinc-600 hover:bg-zinc-700 text-white" size="sm">
+                            Cancel
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Full Name</p>
+                          <p className="text-lg font-bold text-white mt-1">{profileInfo.fullName}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Email</p>
+                          <p className="text-sm text-zinc-300 mt-1">{profileInfo.email}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Target Role */}
@@ -357,13 +468,9 @@ const SkillsProfile = () => {
                       <p className="text-lg font-bold text-cyan-400 mt-1">{profileInfo.targetRole}</p>
                     </div>
                     <Button 
-                        variant="outline" 
+                        className="bg-cyan-600 hover:bg-cyan-700 text-white"
                         size="sm" 
-                        className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                        onClick={() => {
-                            setIsEditingGoal(true);
-                            // Scroll to goal section usually, but simplistic here
-                        }}
+                        onClick={handleEditProfile}
                     >
                       <Edit2 className="w-3 h-3 mr-2" /> Edit Profile
                     </Button>
@@ -381,215 +488,6 @@ const SkillsProfile = () => {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Skills Overview Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold text-white">{profileInfo.totalSkills}</p>
-                    <p className="text-xs text-zinc-500 uppercase tracking-widest mt-2">Total Skills</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold text-cyan-400">{skillsByLevel.beginner}</p>
-                    <p className="text-xs text-zinc-500 uppercase tracking-widest mt-2">Beginner</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold text-blue-500">{skillsByLevel.intermediate}</p>
-                    <p className="text-xs text-zinc-500 uppercase tracking-widest mt-2">Intermediate</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="text-4xl font-bold text-purple-500">{skillsByLevel.advanced}</p>
-                    <p className="text-xs text-zinc-500 uppercase tracking-widest mt-2">Advanced</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Skills List with Actions */}
-            <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800 pb-4">
-                <CardTitle className="text-zinc-100 flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-yellow-500" /> Your Skills
-                </CardTitle>
-                <Button 
-                  onClick={() => setShowAddSkill(!showAddSkill)} 
-                  className="bg-white text-black hover:bg-zinc-200 border-transparent font-bold"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Add Skill
-                </Button>
-              </CardHeader>
-              <CardContent className="pt-6">
-                
-                {/* Add Skill Form */}
-                {showAddSkill && (
-                  <div className="p-6 bg-zinc-950/50 rounded-lg border border-zinc-800 mb-6 animate-in fade-in slide-in-from-top-2">
-                    <h3 className="font-semibold text-white mb-4">Add New Skill</h3>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-2">Skill Name</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., Electronic Health Records (EHR)"
-                            value={newSkillName}
-                            onChange={(e) => setNewSkillName(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-2">Proficiency Level</label>
-                          <select
-                            value={newSkillLevel}
-                            onChange={(e) => setNewSkillLevel(e.target.value)}
-                            className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
-                          >
-                            <option value="Beginner">Beginner (0-33%)</option>
-                            <option value="Intermediate">Intermediate (34-66%)</option>
-                            <option value="Advanced">Advanced (67-100%)</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="flex gap-3 pt-2">
-                        <Button 
-                          onClick={handleAddSkill} 
-                          className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white"
-                        >
-                          Save Skill
-                        </Button>
-                        <Button 
-                          onClick={() => {
-                            setShowAddSkill(false);
-                            setNewSkillName('');
-                            setNewSkillLevel('Beginner');
-                          }} 
-                          variant="outline" 
-                          className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Skills List */}
-                <div className="space-y-3">
-                  {skills.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-lg">
-                      <p className="text-zinc-500">No skills added yet. Click "Add Skill" to build your profile.</p>
-                    </div>
-                  ) : (
-                    skills.map((skill) => (
-                      <div
-                        key={skill.id}
-                        className="flex items-center justify-between p-4 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-cyan-500/30 transition-all duration-200 group"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <h3 className="font-bold text-white text-lg">{skill.name}</h3>
-                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ${getLevelColor(skill.level)}`}>
-                              {skill.level}
-                            </span>
-                          </div>
-
-                          {/* Proficiency Bar */}
-                          <div className="flex items-center gap-3 max-w-md">
-                            <div className="flex-1 bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${getProficiencyColor(skill.proficiency)} shadow-[0_0_8px_rgba(6,182,212,0.4)]`}
-                                style={{ width: `${skill.proficiency}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-mono text-zinc-400 min-w-[3rem] text-right">{skill.proficiency}%</span>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 ml-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-zinc-500 hover:text-red-400 hover:bg-red-950/20"
-                            onClick={() => handleDeleteSkill(skill.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Healthcare Career Goal Section */}
-            <Card className="bg-zinc-900 border-zinc-800 border-l-4 border-l-cyan-500 shadow-lg shadow-black/50 mb-8">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-zinc-100 flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-cyan-400" /> Career Goal
-                  </CardTitle>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-                    onClick={() => {
-                      setTempGoal(careerGoal);
-                      setIsEditingGoal(!isEditingGoal);
-                    }}
-                  >
-                    <Edit2 className="w-3 h-3 mr-2" />
-                    {isEditingGoal ? 'Cancel' : 'Edit'}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isEditingGoal ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 mb-2">Target Healthcare Role</label>
-                      <textarea
-                        placeholder="e.g., Health Informatics Engineer, Clinical Data Analyst"
-                        value={tempGoal}
-                        onChange={(e) => setTempGoal(e.target.value)}
-                        className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 min-h-[100px] focus:outline-none focus:border-cyan-500 transition-colors resize-none"
-                      />
-                      <p className="text-xs text-zinc-500 mt-2">Describe your career aspiration in healthcare</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button 
-                        onClick={handleSaveGoal} 
-                        className="flex-1 bg-white text-black hover:bg-zinc-200"
-                      >
-                        Save Goal
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-6 bg-zinc-950/50 rounded-lg border border-zinc-800">
-                    <h3 className="text-xl font-bold text-white mb-2">{careerGoal}</h3>
-                    <p className="text-sm text-zinc-400">Your skills are being aligned to help you achieve this goal.</p>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
@@ -625,8 +523,7 @@ const SkillsProfile = () => {
                   />
                   <Button 
                     onClick={() => document.getElementById('file-upload').click()}
-                    variant="outline"
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
                   >
                     Choose Files
                   </Button>
@@ -663,7 +560,7 @@ const SkillsProfile = () => {
                       {uploadedFiles.map((file) => (
                         <div
                           key={file.id}
-                          className="flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800 group"
+                          className="flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800 hover:bg-zinc-900 hover:border-cyan-500/30 transition-all duration-200 group"
                         >
                           <div className="flex-1">
                             <p className="text-sm font-medium text-zinc-200">{file.name}</p>
@@ -682,6 +579,188 @@ const SkillsProfile = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Skills List with Actions */}
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8">
+              <CardHeader className="flex flex-row items-center justify-between border-b border-zinc-800 pb-4">
+                <CardTitle className="text-zinc-100 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-yellow-500" /> Your Skills
+                </CardTitle>
+                <Button 
+                  onClick={() => setShowAddSkill(!showAddSkill)} 
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Add Skill
+                </Button>
+              </CardHeader>
+              <CardContent className="pt-6">
+                
+                {/* Add Skill Form */}
+                {showAddSkill && (
+                  <div className="p-6 bg-zinc-950/50 rounded-lg border border-zinc-800 mb-6 animate-in fade-in slide-in-from-top-2">
+                    <h3 className="font-semibold text-white mb-4">Add New Skill</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">Select Skill</label>
+                        <select
+                          value={selectedSkill}
+                          onChange={(e) => setSelectedSkill(e.target.value)}
+                          className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                        >
+                          <option value="">Choose a skill...</option>
+                          {healthcareSkills.map((skill) => (
+                            <option key={skill} value={skill}>{skill}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {selectedSkill === 'Others' && (
+                        <div>
+                          <label className="block text-sm font-medium text-zinc-400 mb-2">Custom Skills</label>
+                          <input
+                            type="text"
+                            placeholder="Enter skills separated by commas (e.g., Skill1, Skill2, Skill3)"
+                            value={customSkill}
+                            onChange={(e) => setCustomSkill(e.target.value)}
+                            className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                          />
+                          <p className="text-xs text-zinc-500 mt-1">Separate multiple skills with commas</p>
+                        </div>
+                      )}
+                      <div className="flex gap-3 pt-2">
+                        <Button 
+                          onClick={handleAddSkill} 
+                          className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white"
+                        >
+                          Save Skill
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setShowAddSkill(false);
+                            setSelectedSkill('');
+                            setCustomSkill('');
+                            setNewSkillLevel('Beginner');
+                          }} 
+                          className="flex-1 bg-zinc-600 hover:bg-zinc-700 text-white"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills List */}
+                <div className="space-y-3">
+                  {skills.length === 0 ? (
+                    <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-lg">
+                      <p className="text-zinc-500">No skills added yet. Click "Add Skill" to build your profile.</p>
+                    </div>
+                  ) : (
+                    skills.map((skill) => (
+                      <div
+                        key={skill.id}
+                        className="flex items-center justify-between p-4 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-cyan-500/30 transition-all duration-200 group"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-3">
+                            <h3 className="font-bold text-white text-lg">{skill.name}</h3>
+                          </div>
+
+                          {/* Proficiency Bar */}
+                          <div className="flex items-center gap-3 max-w-md">
+                            <div className="flex-1 bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${getProficiencyColor(skill.proficiency)} shadow-[0_0_8px_rgba(6,182,212,0.4)]`}
+                                style={{ width: `${skill.proficiency}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-mono text-zinc-400 min-w-[3rem] text-right">{skill.proficiency}%</span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-zinc-500 hover:text-red-400 hover:bg-red-950/20"
+                            onClick={() => handleDeleteSkill(skill.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Healthcare Career Goal Section */}
+            <Card id="career-goal-section" className="bg-zinc-900 border-zinc-800 border-l-4 border-l-cyan-500 shadow-lg shadow-black/50 mb-8">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-zinc-100 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-cyan-400" /> Career Goal
+                  </CardTitle>
+                  <Button 
+                    size="sm"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                    onClick={() => {
+                      setSelectedCareerGoal(careerGoal);
+                      setIsEditingGoal(!isEditingGoal);
+                    }}
+                  >
+                    <Edit2 className="w-3 h-3 mr-2" />
+                    {isEditingGoal ? 'Cancel' : 'Edit'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isEditingGoal ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">Select Career Goal</label>
+                      <select
+                        value={selectedCareerGoal}
+                        onChange={(e) => setSelectedCareerGoal(e.target.value)}
+                        className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                      >
+                        {[...healthcareCareers, ...customCareerGoals].map((career) => (
+                          <option key={career} value={career}>{career}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedCareerGoal === 'Others' && (
+                      <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">Custom Career Goals</label>
+                        <input
+                          type="text"
+                          placeholder="Enter goals separated by commas (e.g., Goal1, Goal2)"
+                          value={customGoalInput}
+                          onChange={(e) => setCustomGoalInput(e.target.value)}
+                          className="w-full bg-black border border-zinc-700 text-white rounded-md px-3 py-2 focus:outline-none focus:border-cyan-500 transition-colors"
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">Separate multiple goals with commas</p>
+                      </div>
+                    )}
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={handleSaveGoal} 
+                        className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white"
+                      >
+                        Save Goal
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-zinc-950/50 rounded-lg border border-zinc-800 hover:bg-zinc-900/50 hover:border-cyan-500/30 transition-all duration-200">
+                    <h3 className="text-xl font-bold text-white mb-2">{careerGoal}</h3>
+                    <p className="text-sm text-zinc-400">Your skills are being aligned to help you achieve this goal.</p>
                   </div>
                 )}
               </CardContent>

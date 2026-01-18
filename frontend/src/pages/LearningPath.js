@@ -8,32 +8,71 @@ import toast from 'react-hot-toast';
 
 const LearningPath = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('learning-path');
-  
-  // Sample Data for Visualization
-  const [learningPath, setLearningPath] = useState([
-    { id: 101, courseTitle: 'HL7 Fundamentals', skill: 'HL7 Standards', status: 'in-progress', progress: 45, platform: 'Coursera', duration: '5h' },
-    { id: 102, courseTitle: 'Python for Health Data', skill: 'Python', status: 'not-started', progress: 0, platform: 'Udemy', duration: '12h' }
-  ]);
+  const [careerAnalysis, setCareerAnalysis] = useState(null);
+  const [learningPath, setLearningPath] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const recommendedCourses = [
-    { id: 1, title: 'FHIR for Developers', skill: 'FHIR API', platform: 'Pluralsight', difficulty: 'Intermediate', rating: 4.8, duration: '8h', explanation: 'Directly addresses your missing FHIR skill gap.' },
-    { id: 2, title: 'HIPAA Compliance Masterclass', skill: 'HIPAA', platform: 'LinkedIn Learning', difficulty: 'Beginner', rating: 4.5, duration: '4h', explanation: 'Essential for the Target Role requirements.' }
-  ];
+  useEffect(() => {
+    fetchCareerAnalysis();
+  }, []);
 
-  const pathOverview = {
-    targetRole: 'Health Informatics Engineer',
-    skillsToAcquire: 5,
-    estimatedDuration: '6 weeks',
-    progress: 15,
-    expectedReadinessIncrease: 28
+  const fetchCareerAnalysis = async () => {
+    try {
+      const response = await fetch('/api/career-analysis/latest', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCareerAnalysis(data.analysis);
+      }
+    } catch (error) {
+      console.error('Failed to fetch career analysis:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const skillImpactData = [
-    { skill: 'HL7 Standards', currentLevel: 'Novice', expectedLevel: 'Competent', impact: 'High' },
-    { skill: 'Python', currentLevel: 'Beginner', expectedLevel: 'Intermediate', impact: 'Medium' }
-  ];
+  // Get recommended courses from skill_gap array (next course after last completed)
+  const getRecommendedCourses = () => {
+    if (!careerAnalysis?.skill_gap) return [];
+    
+    const incompleteSkills = careerAnalysis.skill_gap.filter(skill => !skill.completed);
+    return incompleteSkills.slice(0, 2).map((skill, index) => ({
+      id: index + 1,
+      title: `${skill.skill_name} Training`,
+      skill: skill.skill_name,
+      platform: skill.resources?.[0]?.type === 'course' ? 'Online Course' : 'Learning Platform',
+      difficulty: skill.importance === 'critical' ? 'Advanced' : skill.importance === 'important' ? 'Intermediate' : 'Beginner',
+      rating: 4.5,
+      duration: '8-12h',
+      explanation: `Essential ${skill.importance} priority skill for your career goal.`,
+      resources: skill.resources || []
+    }));
+  };
+
+  const recommendedCourses = getRecommendedCourses();
+
+  // Build path overview from backend data
+  const pathOverview = careerAnalysis ? {
+    targetRole: careerAnalysis.career_goal || 'Not specified',
+    skillsToAcquire: careerAnalysis.skill_gap?.filter(s => !s.completed).length || 0,
+    estimatedDuration: `${Math.ceil((careerAnalysis.skill_gap?.length || 0) * 1.5)} weeks`,
+    progress: careerAnalysis.skill_gap?.length > 0 ? 
+      Math.round((careerAnalysis.skill_gap.filter(s => s.completed).length / careerAnalysis.skill_gap.length) * 100) : 0,
+    expectedReadinessIncrease: careerAnalysis.gap_percentage || 0
+  } : null;
+
+  // Get skill impact data from completed skills
+  const skillImpactData = careerAnalysis?.skill_gap?.filter(skill => skill.completed).map(skill => ({
+    skill: skill.skill_name,
+    impact: skill.importance,
+    completedCourses: skill.resources?.filter(r => r.type === 'course').length || 0
+  })) || [];
 
   const handleLogout = () => {
     logout();
@@ -47,9 +86,7 @@ const LearningPath = () => {
     { id: 'skill-analysis', label: 'Skill Analysis', icon: BookOpen },
     { id: 'learning-path', label: 'Learning Path', icon: Map },
     { id: 'progress-tracking', label: 'Progress Tracking', icon: TrendingUp },
-    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Help & Support', icon: HelpCircle }
+    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 }
   ];
 
   const handleMenuClick = (itemId) => {
@@ -70,7 +107,8 @@ const LearningPath = () => {
       status: 'not-started',
       progress: 0,
       platform: course.platform,
-      duration: course.duration
+      duration: course.duration,
+      resources: course.resources
     };
     setLearningPath([...learningPath, newPathItem]);
     toast.success(`${course.title} added to your learning path!`);
@@ -93,7 +131,6 @@ const LearningPath = () => {
   };
 
   const inProgressCourses = learningPath.filter(p => p.status === 'in-progress');
-  const notStartedCourses = learningPath.filter(p => p.status === 'not-started');
   const completedCourses = learningPath.filter(p => p.status === 'completed');
 
   const getDifficultyColor = (difficulty) => {
@@ -186,38 +223,54 @@ const LearningPath = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="relative z-10">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Target Role</p>
-                    <p className="text-lg font-bold text-white mt-1">{pathOverview.targetRole}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Skills to Acquire</p>
-                    <p className="text-lg font-bold text-cyan-400 mt-1">{pathOverview.skillsToAcquire}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Est. Duration</p>
-                    <p className="text-lg font-bold text-white mt-1">{pathOverview.estimatedDuration}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Readiness Boost</p>
-                    <p className="text-lg font-bold text-green-400 mt-1">+{pathOverview.expectedReadinessIncrease}%</p>
-                  </div>
-                </div>
+                {pathOverview ? (
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Target Role</p>
+                        <p className="text-lg font-bold text-white mt-1">{pathOverview.targetRole}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Skills to Acquire</p>
+                        <p className="text-lg font-bold text-cyan-400 mt-1">{pathOverview.skillsToAcquire}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Est. Duration</p>
+                        <p className="text-lg font-bold text-white mt-1">{pathOverview.estimatedDuration}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Gap to Close</p>
+                        <p className="text-lg font-bold text-red-400 mt-1">{pathOverview.expectedReadinessIncrease}%</p>
+                      </div>
+                    </div>
 
-                {/* Progress Bar */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-zinc-300">Overall Progress</span>
-                    <span className="text-sm font-bold text-cyan-400">{pathOverview.progress}%</span>
+                    {/* Progress Bar */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-medium text-zinc-300">Overall Progress</span>
+                        <span className="text-sm font-bold text-cyan-400">{pathOverview.progress}%</span>
+                      </div>
+                      <div className="w-full bg-zinc-800 h-3 rounded-full overflow-hidden border border-zinc-700">
+                        <div
+                          className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+                          style={{ width: `${pathOverview.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <Map className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
+                    <p className="text-zinc-400 mb-2">No learning path data available</p>
+                    <p className="text-sm text-zinc-500">Complete your profile and skill analysis first.</p>
+                    <Button
+                      onClick={() => navigate('/skills-profile')}
+                      className="mt-4 bg-cyan-600 hover:bg-cyan-700 text-white"
+                    >
+                      Complete Profile
+                    </Button>
                   </div>
-                  <div className="w-full bg-zinc-800 h-3 rounded-full overflow-hidden border border-zinc-700">
-                    <div
-                      className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
-                      style={{ width: `${pathOverview.progress}%` }}
-                    />
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -226,7 +279,7 @@ const LearningPath = () => {
               <CardHeader>
                 <CardTitle className="text-zinc-100 flex items-center gap-2">
                   <Zap className="h-5 w-5 text-yellow-500" />
-                  Recommended Courses (AI-Curated)
+                  Recommended Courses
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -267,6 +320,21 @@ const LearningPath = () => {
                           <p className="text-sm text-zinc-400 mb-4 italic pl-3 border-l-2 border-zinc-700">
                             "{course.explanation}"
                           </p>
+
+                          {/* Show available resources */}
+                          {course.resources && course.resources.length > 0 && (
+                            <div className="mb-4">
+                              <p className="text-xs text-zinc-500 font-semibold mb-2">Available Resources:</p>
+                              <div className="space-y-1">
+                                {course.resources.slice(0, 2).map((resource, idx) => (
+                                  <div key={idx} className="text-xs text-cyan-400 flex items-center gap-2">
+                                    <span className="w-1 h-1 bg-cyan-400 rounded-full"></span>
+                                    {resource.title} ({resource.type})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           <div className="flex items-center justify-between mt-4">
                             <span className="text-xs text-zinc-500 flex items-center gap-1">
@@ -376,50 +444,7 @@ const LearningPath = () => {
                 </Card>
               )}
 
-              {/* Not Started */}
-              {notStartedCourses.length > 0 && (
-                <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 border-l-4 border-l-zinc-600">
-                  <CardHeader>
-                    <CardTitle className="text-zinc-100 flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-zinc-500" />
-                      Not Started ({notStartedCourses.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {notStartedCourses.map((course) => (
-                        <div key={course.id} className="p-4 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-all opacity-80 hover:opacity-100">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-zinc-300">{course.courseTitle}</h4>
-                              <p className="text-xs text-zinc-500 mt-1">Skill: {course.skill} | Platform: {course.platform}</p>
-                              <p className="text-xs text-zinc-600 mt-1 flex items-center gap-1"><Clock className="h-3 w-3" /> {course.duration}</p>
-                            </div>
-                            <div className="flex gap-2 items-center">
-                              <Button
-                                size="sm"
-                                className="bg-zinc-800 text-white hover:bg-cyan-600 hover:text-white border-0 text-xs h-8"
-                                onClick={() => handleProgressUpdate(course.id, 'in-progress', 10)}
-                              >
-                                <ChevronRight className="h-3 w-3 mr-1" />
-                                Start
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveCourse(course.id)}
-                                className="text-zinc-600 hover:text-red-400 hover:bg-red-950/20 p-1 h-auto"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Not Started - REMOVED as requested */}
 
               {/* Completed */}
               {completedCourses.length > 0 && (
@@ -457,7 +482,7 @@ const LearningPath = () => {
                     <Zap className="h-5 w-5 text-purple-500" />
                     Skill Impact Summary
                   </CardTitle>
-                  <p className="text-xs text-zinc-500 mt-2">Completing your current learning path will improve:</p>
+                  <p className="text-xs text-zinc-500 mt-2">Your completed skills and their impact:</p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -468,17 +493,22 @@ const LearningPath = () => {
                           <span className="text-sm font-bold text-green-400">{item.impact} Impact</span>
                         </div>
                         <div className="text-xs text-zinc-400 space-y-1">
-                          <p>Current: <span className="font-medium text-zinc-200">{item.currentLevel}</span></p>
-                          <p>Expected: <span className="font-medium text-green-400">{item.expectedLevel}</span></p>
+                          <p>Status: <span className="font-medium text-green-400">Completed</span></p>
+                          <p>Courses Available: <span className="font-medium text-zinc-200">{item.completedCourses}</span></p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-6 p-4 bg-green-950/20 border border-green-900/30 rounded-lg">
-                    <p className="text-sm font-semibold text-green-300">
-                      📈 Your overall readiness will increase by <span className="text-lg text-white">+{pathOverview.expectedReadinessIncrease}%</span> after completing this path!
-                    </p>
-                  </div>
+                  {pathOverview && (
+                    <div className="mt-6 p-4 bg-green-950/20 border border-green-900/30 rounded-lg">
+                      <p className="text-sm font-semibold text-green-300">
+                        📈 Your current readiness: <span className="text-lg text-white">{pathOverview.progress}%</span>
+                      </p>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Complete remaining skills to close the {pathOverview.expectedReadinessIncrease}% gap
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

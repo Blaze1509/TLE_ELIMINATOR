@@ -4,71 +4,59 @@ import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Se
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import useAuthStore from '../store/authStore';
-import { api } from '../api/apiClient';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [stats, setStats] = useState({
-    readinessScore: 0,
-    totalAnalyses: 0,
-    skillsCount: 0,
-    completedAnalyses: 0
-  });
-  const [analyses, setAnalyses] = useState([]);
+  const [careerAnalysis, setCareerAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUserStats();
-    fetchUserAnalyses();
+    fetchCareerAnalysis();
   }, []);
 
-  const fetchUserAnalyses = async () => {
+  const fetchCareerAnalysis = async () => {
     try {
-      const response = await api.getUserAnalyses();
-      setAnalyses(response.data);
+      const response = await fetch('/api/career-analysis/latest', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCareerAnalysis(data.analysis);
+      }
     } catch (error) {
-      console.error('Error fetching analyses:', error);
-    }
-  };
-
-  const fetchUserStats = async () => {
-    try {
-      const response = await api.getUserStats();
-      setStats(response.data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-      // Keep default values (0) if API fails
+      console.error('Failed to fetch career analysis:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Real data from API
-  const latestAnalysis = analyses.length > 0 ? analyses[0] : null;
-  const careerAnalysis = latestAnalysis?.analysisResult?.careerAnalysis || {};
-  const readinessScore = stats.readinessScore || 0;
-  const targetRole = latestAnalysis?.role || 'Health Informatics Engineer';
+  // Real data from career analysis
+  const readinessScore = careerAnalysis ? 
+    (careerAnalysis.readiness_score || (100 - careerAnalysis.gap_percentage)) : 0;
+  const targetRole = careerAnalysis?.career_goal || 'Health Informatics Engineer';
   const roleDescription = 'Design healthcare IT systems with FHIR, HL7, and HIPAA compliance';
   
   const skillsStats = {
-    total: latestAnalysis?.skills?.length || 0,
-    beginner: careerAnalysis.weakSkills?.filter(s => s.currentLevel === 'Beginner').length || 0,
-    intermediate: careerAnalysis.weakSkills?.filter(s => s.currentLevel === 'Intermediate').length || 0,
-    advanced: careerAnalysis.strongSkills?.length || 0
+    total: careerAnalysis?.skill_gap?.length || 0,
+    completed: careerAnalysis?.skill_gap?.filter(s => s.completed).length || 0,
+    pending: careerAnalysis?.skill_gap?.filter(s => !s.completed).length || 0
   };
 
   const skillGaps = {
-    missing: careerAnalysis.missingSkills?.length || 0,
-    weak: careerAnalysis.weakSkills?.length || 0
+    missing: careerAnalysis?.skill_gap?.filter(s => !s.completed).length || 0,
+    weak: careerAnalysis?.skill_gap?.filter(s => s.importance === 'critical' && !s.completed).length || 0
   };
 
-  const radarData = careerAnalysis.skillImportance?.slice(0, 5).map(item => ({
-    skill: item.skill,
-    required: item.importance,
-    current: item.userLevel
+  const radarData = careerAnalysis?.skill_gap?.slice(0, 5).map(skill => ({
+    skill: skill.skill_name,
+    required: skill.importance === 'critical' ? 90 : skill.importance === 'important' ? 80 : 70,
+    current: skill.completed ? 85 : 20
   })) || [
     { skill: 'FHIR', required: 90, current: 0 },
     { skill: 'HL7', required: 85, current: 0 },
@@ -77,20 +65,20 @@ const Dashboard = () => {
     { skill: 'Data Analytics', required: 75, current: 0 }
   ];
 
-  const nextActions = careerAnalysis.recommendedActions?.slice(0, 3).map(action => ({
-    id: action.rank,
-    skill: action.skill,
+  const nextActions = careerAnalysis?.skill_gap?.filter(s => !s.completed).slice(0, 3).map((skill, index) => ({
+    id: index + 1,
+    skill: skill.skill_name,
     type: 'Course',
-    priority: action.priority,
-    icon: action.rank === 1 ? '🎯' : action.rank === 2 ? '📚' : '⚡'
+    priority: skill.importance === 'critical' ? 'High' : 'Medium',
+    icon: index === 0 ? '🎯' : index === 1 ? '📚' : '⚡'
   })) || [];
 
   const progressData = [
-    { week: 'Week 1', readiness: 0 },
-    { week: 'Week 2', readiness: 0 },
-    { week: 'Week 3', readiness: 0 },
-    { week: 'Week 4', readiness: 0 },
-    { week: 'Week 5', readiness: 0 },
+    { week: 'Week 1', readiness: Math.max(0, readinessScore - 30) },
+    { week: 'Week 2', readiness: Math.max(0, readinessScore - 25) },
+    { week: 'Week 3', readiness: Math.max(0, readinessScore - 20) },
+    { week: 'Week 4', readiness: Math.max(0, readinessScore - 15) },
+    { week: 'Week 5', readiness: Math.max(0, readinessScore - 10) },
     { week: 'Week 6', readiness: readinessScore }
   ];
 
@@ -106,9 +94,7 @@ const Dashboard = () => {
     { id: 'skill-analysis', label: 'Skill Analysis', icon: BookOpen },
     { id: 'learning-path', label: 'Learning Path', icon: Map },
     { id: 'progress-tracking', label: 'Progress Tracking', icon: TrendingUp },
-    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Help & Support', icon: HelpCircle }
+    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 }
   ];
 
   const handleMenuClick = (itemId) => {
@@ -130,7 +116,7 @@ const Dashboard = () => {
   };
 
   const handleChangeRole = () => {
-    toast.info('Skill Analysis feature coming soon!');
+    navigate('/skills-profile');
   };
 
   return (
@@ -273,10 +259,10 @@ const Dashboard = () => {
                       <p className="text-sm text-zinc-400 leading-relaxed">{roleDescription}</p>
                     </div>
                   </div>
-                  {/* BUTTON CHANGED: White Background with Black Text */}
+                  {/* BUTTON UPDATED: Consistent styling with other pages */}
                   <Button
                     onClick={handleChangeRole}
-                    className="w-full text-sm bg-white text-black hover:bg-zinc-200 border-transparent font-medium"
+                    className="w-full text-sm bg-cyan-600 hover:bg-cyan-700 text-white border-0 font-medium"
                   >
                     Change Role
                   </Button>
@@ -292,26 +278,20 @@ const Dashboard = () => {
                   <div className="space-y-6">
                     <div className="flex items-baseline gap-2">
                       <p className="text-5xl font-bold text-white">{skillsStats.total}</p>
-                      <p className="text-sm text-black-500 font-medium">Total Skills Added</p>
+                      <p className="text-sm text-white font-medium">Total Skills Added</p>
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-sm p-2 rounded hover:bg-zinc-800/50 transition-colors">
                         <span className="text-zinc-400 flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-cyan-800"></div> Beginner
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div> Courses Completed
                         </span>
-                        <span className="font-mono text-white">{skillsStats.beginner}</span>
+                        <span className="font-mono text-white">{skillsStats.completed}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm p-2 rounded hover:bg-zinc-800/50 transition-colors">
                         <span className="text-zinc-400 flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-cyan-500"></div> Intermediate
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div> Courses Pending
                         </span>
-                        <span className="font-mono text-white">{skillsStats.intermediate}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm p-2 rounded hover:bg-zinc-800/50 transition-colors">
-                        <span className="text-zinc-400 flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-blue-500"></div> Advanced
-                        </span>
-                        <span className="font-mono text-white">{skillsStats.advanced}</span>
+                        <span className="font-mono text-white">{skillsStats.pending}</span>
                       </div>
                     </div>
                   </div>
@@ -408,7 +388,8 @@ const Dashboard = () => {
                     <div className="space-y-3">
                       {nextActions.length > 0 ? (
                         nextActions.map((action) => (
-                          <div key={action.id} className="flex items-start gap-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-cyan-700/50 transition-colors group">
+                          <div key={action.id} className="flex items-start gap-3 p-3 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-cyan-700/50 transition-colors group cursor-pointer"
+                               onClick={() => navigate('/progress-tracking')}>
                             <span className="text-xl">{action.icon}</span>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-sm text-zinc-200 truncate group-hover:text-white">{action.skill}</p>
@@ -432,12 +413,12 @@ const Dashboard = () => {
                         <div className="text-center py-6">
                           <p className="text-sm text-zinc-500 mb-3">No actions generated yet.</p>
                           <Button 
-                            onClick={() => navigate('/skill-analysis')} 
+                            onClick={() => navigate('/progress-tracking')} 
                             variant="outline" 
                             size="sm" 
-                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-cyan-500"
+                            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-cyan-500 bg-cyan-600 hover:bg-cyan-700 text-white border-0"
                           >
-                            Start Skill Analysis
+                            Start Progress Tracking
                           </Button>
                         </div>
                       )}
@@ -490,7 +471,7 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* 8. Explainability Panel */}
+            {/* 8. Achievement Panel */}
             {readinessScore > 0 && (
               <Card className="bg-emerald-950/10 border border-emerald-900/30 shadow-lg shadow-black/50">
                 <CardContent className="pt-6">
@@ -499,9 +480,12 @@ const Dashboard = () => {
                         <CheckCircle className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div>
-                      <p className="font-bold text-emerald-400 text-lg">Achievement Unlocked!</p>
+                      <p className="font-bold text-emerald-400 text-lg">Great Progress!</p>
                       <p className="text-sm text-emerald-200/70 mt-1 leading-relaxed">
-                        Your readiness increased by <span className="font-bold text-white">12%</span> after completing the SQL for Healthcare course. Keep pushing forward!
+                        Your readiness score is <span className="font-bold text-white">{readinessScore}%</span>. 
+                        {careerAnalysis?.skill_gap?.filter(s => s.completed).length > 0 && 
+                          ` You've completed ${careerAnalysis.skill_gap.filter(s => s.completed).length} skills!`
+                        } Keep pushing forward!
                       </p>
                     </div>
                   </div>

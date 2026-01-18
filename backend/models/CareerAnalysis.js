@@ -100,6 +100,20 @@ const careerAnalysisSchema = new mongoose.Schema({
   },
   recommendations: String,
   
+  // Progress tracking fields
+  readiness_score: {
+    type: Number,
+    default: function() { return 100 - this.gap_percentage; }
+  },
+  completed_skills_count: {
+    type: Number,
+    default: 0
+  },
+  total_learning_hours: {
+    type: Number,
+    default: 0
+  },
+  
   // Status tracking
   predict_completed: {
     type: Boolean,

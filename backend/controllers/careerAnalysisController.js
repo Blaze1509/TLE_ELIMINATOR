@@ -275,12 +275,24 @@ exports.markSkillCompleted = async (req, res) => {
     const skill = analysis.skill_gap.id(skillId);
     if (skill) {
       skill.completed = true;
+      
+      // Update completed skills count and readiness score
+      analysis.completed_skills_count = analysis.skill_gap.filter(s => s.completed).length;
+      analysis.total_learning_hours = (analysis.total_learning_hours || 0) + 15; // Add 15 hours per completed skill
+      
+      // Recalculate readiness score based on completed skills
+      const totalSkills = analysis.skill_gap.length;
+      const completedSkills = analysis.completed_skills_count;
+      const completionRate = completedSkills / totalSkills;
+      analysis.readiness_score = Math.min(95, 30 + (completionRate * 65)); // Scale from 30% to 95%
+      
       await analysis.save();
     }
 
     res.json({
       success: true,
-      message: 'Skill marked as completed'
+      message: 'Skill marked as completed',
+      readinessScore: analysis.readiness_score
     });
   } catch (error) {
     console.error('Mark skill completed error:', error);

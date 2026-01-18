@@ -1,155 +1,152 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, Lightbulb, Download, Award, CheckCircle, AlertCircle, ArrowRight, Users, Activity } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, Lightbulb, Download, Award, CheckCircle, AlertCircle, ArrowRight, Users, Activity, Target, GitBranch } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
 const InsightsReports = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('insights-reports');
   const [reportFormat, setReportFormat] = useState('pdf');
+  const [insightsData, setInsightsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
-  // Key insights data
-  const keyInsights = [
-    {
-      id: 1,
-      icon: TrendingUp,
-      title: 'Readiness Growth',
-      value: '+14%',
-      description: 'Readiness increased by 14% in the last 30 days',
-      status: 'positive',
-      color: 'green'
-    },
-    {
-      id: 2,
-      icon: Award,
-      title: 'Strongest Area',
-      value: 'SQL',
-      description: 'SQL for Healthcare - 75% proficiency',
-      status: 'positive',
-      color: 'blue'
-    },
-    {
-      id: 3,
-      icon: AlertCircle,
-      title: 'Priority Gap',
-      value: 'FHIR',
-      description: 'FHIR Standards - 0% proficiency (+8% impact potential)',
-      status: 'warning',
-      color: 'orange'
-    },
-    {
-      id: 4,
-      icon: CheckCircle,
-      title: 'Courses Completed',
-      value: '3',
-      description: '3 courses completed in the last 60 days',
-      status: 'positive',
-      color: 'purple'
+  // Fetch insights data from backend
+  useEffect(() => {
+    fetchInsightsData();
+  }, []);
+
+  const fetchInsightsData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/insights/data', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setInsightsData(result.data);
+      } else {
+        throw new Error('Failed to fetch insights');
+      }
+    } catch (error) {
+      console.error('Fetch insights error:', error);
+      toast.error('Failed to load insights data');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Skill impact insights
-  const skillImpactInsights = [
-    {
-      id: 1,
-      action: 'Completed "FHIR Fundamentals"',
-      result: 'FHIR upgraded from 0% → 65%',
-      impact: '+8% readiness',
-      date: '2024-12-15',
-      impactValue: 8
-    },
-    {
-      id: 2,
-      action: 'Completed "HIPAA Compliance Essentials"',
-      result: 'HIPAA upgraded to 80% proficiency',
-      impact: '+6% readiness',
-      date: '2024-11-28',
-      impactValue: 6
-    },
-    {
-      id: 3,
-      action: 'Started "SQL for Healthcare Analytics"',
-      result: 'SQL improved from 65% → 75%',
-      impact: '+3% readiness',
-      date: '2024-11-15',
-      impactValue: 3
-    }
-  ];
+  // Generate key insights from data
+  const getKeyInsights = () => {
+    if (!insightsData) return [];
+    
+    return [
+      {
+        id: 1,
+        icon: TrendingUp,
+        title: 'Readiness Growth',
+        value: insightsData.keyInsights.readinessGrowth.value,
+        description: insightsData.keyInsights.readinessGrowth.description,
+        status: insightsData.keyInsights.readinessGrowth.status,
+        color: insightsData.keyInsights.readinessGrowth.status === 'positive' ? 'green' : 
+               insightsData.keyInsights.readinessGrowth.status === 'negative' ? 'red' : 'gray'
+      },
+      {
+        id: 2,
+        icon: Award,
+        title: 'Strongest Area',
+        value: insightsData.keyInsights.strongestArea.value,
+        description: insightsData.keyInsights.strongestArea.description,
+        status: insightsData.keyInsights.strongestArea.status,
+        color: 'blue'
+      },
+      {
+        id: 3,
+        icon: AlertCircle,
+        title: 'Priority Gap',
+        value: insightsData.keyInsights.priorityGap.value,
+        description: insightsData.keyInsights.priorityGap.description,
+        status: insightsData.keyInsights.priorityGap.status,
+        color: insightsData.keyInsights.priorityGap.status === 'warning' ? 'orange' : 'green'
+      },
+      {
+        id: 4,
+        icon: CheckCircle,
+        title: 'Courses Completed',
+        value: insightsData.keyInsights.coursesCompleted.value,
+        description: insightsData.keyInsights.coursesCompleted.description,
+        status: 'positive',
+        color: 'purple'
+      }
+    ];
+  };
 
-  // Readiness trend data
-  const readinessTrend = [
-    { week: 'Week 1', readiness: 50 },
-    { week: 'Week 2', readiness: 52 },
-    { week: 'Week 3', readiness: 54 },
-    { week: 'Week 4', readiness: 56 },
-    { week: 'Week 5', readiness: 58 },
-    { week: 'Week 6', readiness: 60 },
-    { week: 'Week 7', readiness: 62 },
-    { week: 'Week 8', readiness: 64 }
-  ];
+  const getSkillImpactInsights = () => {
+    return insightsData?.skillImpactInsights || [];
+  };
 
-  // Personalized recommendations
-  const recommendations = [
-    {
-      rank: 1,
-      skill: 'HL7 Standards',
-      reason: 'Critical for healthcare data exchange',
-      estimatedGain: '+8%',
-      timeframe: '5 weeks',
-      priority: 'Critical',
-      course: 'HL7 Messaging Standards'
-    },
-    {
-      rank: 2,
-      skill: 'EHR Systems',
-      reason: 'Essential for role, highest ROI',
-      estimatedGain: '+12%',
-      timeframe: '8 weeks',
-      priority: 'Critical',
-      course: 'EHR Implementation & Workflow'
-    },
-    {
-      rank: 3,
-      skill: 'Healthcare Cloud',
-      reason: 'Modern healthcare infrastructure',
-      estimatedGain: '+10%',
-      timeframe: '6 weeks',
+  const getReadinessTrend = () => {
+    return insightsData?.readinessTrend || [];
+  };
+
+  const getRecommendations = () => {
+    if (!insightsData) return [];
+    // Generate recommendations from skill gaps
+    return insightsData.skillImpactInsights.slice(0, 3).map((insight, index) => ({
+      rank: index + 1,
+      skill: insight.action.replace('Completed "', '').replace('"', ''),
+      reason: 'Based on your analysis results',
+      estimatedGain: insight.impact,
+      timeframe: '4-6 weeks',
       priority: 'High',
-      course: 'Microsoft Azure for Healthcare'
-    }
-  ];
-
-  // Benchmark insights
-  const benchmarkInsights = {
-    userReadiness: 64,
-    peerAverage: 55,
-    benchmark: 75,
-    comparison: 'You are ahead of 60% of learners targeting the same role'
+      course: `${insight.action.replace('Completed "', '').replace('"', '')} Course`
+    }));
   };
 
-  // Time insights
-  const timeInsights = {
-    avgHoursPerWeek: 8.5,
-    consistencyScore: 85,
-    estimatedWeeksToReady: 6,
-    estimatedMonthsToReady: 1.5
+  const getBenchmarkInsights = () => {
+    return insightsData?.benchmarkComparison || {
+      userReadiness: 0,
+      peerAverage: 0,
+      benchmark: 80,
+      percentileRank: 0,
+      comparison: 'Loading benchmark data...'
+    };
   };
 
-  // Report summary data
-  const reportSummary = {
-    generatedDate: '2024-12-15',
-    reportPeriod: 'Last 60 days',
-    skillsAssessed: 11,
-    skillsLearned: 4,
-    coursesCompleted: 3,
-    totalHours: 51,
-    currentReadiness: 64,
-    targetReadiness: 80,
-    readinessGain: 14
+  const getTimeInsights = () => {
+    return insightsData?.timeInsights || {
+      avgHoursPerWeek: 0,
+      consistencyScore: 0,
+      estimatedWeeksToReady: 0,
+      estimatedMonthsToReady: 0
+    };
+  };
+
+  const getReportSummary = () => {
+    return insightsData?.reportSummary || {
+      generatedDate: new Date().toLocaleDateString(),
+      reportPeriod: 'All time',
+      skillsAssessed: 0,
+      skillsLearned: 0,
+      coursesCompleted: 0,
+      totalHours: 0,
+      currentReadiness: 0,
+      targetReadiness: 80,
+      readinessGain: 0
+    };
+  };
+
+  const getVisualizationData = () => {
+    return insightsData?.visualizationData || { skillGapData: [], careerPathwayData: [], skillDistribution: [] };
   };
 
   const handleLogout = () => {
@@ -164,9 +161,7 @@ const InsightsReports = () => {
     { id: 'skill-analysis', label: 'Skill Analysis', icon: BookOpen },
     { id: 'learning-path', label: 'Learning Path', icon: Map },
     { id: 'progress-tracking', label: 'Progress Tracking', icon: TrendingUp },
-    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Help & Support', icon: HelpCircle }
+    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 }
   ];
 
   const handleMenuClick = (itemId) => {
@@ -179,12 +174,50 @@ const InsightsReports = () => {
     else setActiveSection(itemId);
   };
 
-  const handleExportReport = (format) => {
-    toast.success(`Report exported as ${format.toUpperCase()}!`);
+  const handleExportReport = async (format) => {
+    try {
+      setDownloading(true);
+      const endpoint = format === 'pdf' ? '/api/insights/report/pdf' : '/api/insights/report/json';
+      
+      const response = await fetch(endpoint, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `career-insights-${Date.now()}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success(`Report downloaded as ${format.toUpperCase()}!`);
+      } else {
+        throw new Error('Download failed');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to download report');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const generateSVGChart = () => {
-    const chartHeight = 200;
+    const readinessTrend = getReadinessTrend();
+    if (!readinessTrend.length) {
+      return (
+        <div className="flex items-center justify-center h-full text-zinc-500">
+          No trend data available
+        </div>
+      );
+    }
+
+    const chartHeight = 280;
     const chartWidth = 700;
     const padding = 40;
     const effectiveWidth = chartWidth - padding * 2;
@@ -254,9 +287,45 @@ const InsightsReports = () => {
       case 'blue': return 'text-blue-400 bg-blue-900/20 border-blue-900/50';
       case 'orange': return 'text-orange-400 bg-orange-900/20 border-orange-900/50';
       case 'purple': return 'text-purple-400 bg-purple-900/20 border-purple-900/50';
+      case 'red': return 'text-red-400 bg-red-900/20 border-red-900/50';
+      case 'gray': return 'text-gray-400 bg-gray-900/20 border-gray-900/50';
       default: return 'text-zinc-400 bg-zinc-900 border-zinc-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-zinc-400">Loading insights data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!insightsData) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+          <p className="text-zinc-400 mb-4">No analysis data found</p>
+          <Button onClick={() => navigate('/skill-analysis')} className="bg-cyan-600 hover:bg-cyan-700">
+            Complete Skill Analysis
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const keyInsights = getKeyInsights();
+  const skillImpactInsights = getSkillImpactInsights();
+  const readinessTrend = getReadinessTrend();
+  const recommendations = getRecommendations();
+  const benchmarkInsights = getBenchmarkInsights();
+  const timeInsights = getTimeInsights();
+  const reportSummary = getReportSummary();
+  const { skillGapData, careerPathwayData, skillDistribution } = getVisualizationData();
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -363,7 +432,7 @@ const InsightsReports = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {skillImpactInsights.map((insight) => (
+                  {skillImpactInsights.length > 0 ? skillImpactInsights.map((insight) => (
                     <div key={insight.id} className="p-4 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-yellow-500/30 transition-colors">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -379,12 +448,166 @@ const InsightsReports = () => {
                         <p className="text-xs font-semibold text-zinc-300">{insight.result}</p>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="p-8 text-center text-zinc-500">
+                      <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>Complete more skills to see impact insights</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* 3. Career Readiness Trends */}
+            {/* 3. Data Visualizations */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              {/* Career Pathway Visualization */}
+              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
+                <CardHeader>
+                  <CardTitle className="text-zinc-100 flex items-center gap-2">
+                    <GitBranch className="h-5 w-5 text-purple-400" />
+                    Career Pathway Progress
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">Your progression through career stages</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={careerPathwayData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="stage" tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                        <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#18181b', 
+                            border: '1px solid #374151', 
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                        <Bar dataKey="completed" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Skill Gap Analysis */}
+              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
+                <CardHeader>
+                  <CardTitle className="text-zinc-100 flex items-center gap-2">
+                    <Target className="h-5 w-5 text-red-400" />
+                    Skill Gap Analysis
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 mt-1">Current vs required skill levels</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={skillGapData}>
+                        <PolarGrid stroke="#374151" />
+                        <PolarAngleAxis dataKey="skill" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                        <PolarRadiusAxis 
+                          angle={90} 
+                          domain={[0, 100]} 
+                          tick={{ fill: '#9ca3af', fontSize: 10 }}
+                        />
+                        <Radar 
+                          name="Current" 
+                          dataKey="current" 
+                          stroke="#22d3ee" 
+                          fill="#22d3ee" 
+                          fillOpacity={0.2}
+                          strokeWidth={2}
+                        />
+                        <Radar 
+                          name="Required" 
+                          dataKey="required" 
+                          stroke="#ef4444" 
+                          fill="#ef4444" 
+                          fillOpacity={0.1}
+                          strokeWidth={2}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#18181b', 
+                            border: '1px solid #374151', 
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 4. Skill Distribution */}
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8">
+              <CardHeader>
+                <CardTitle className="text-zinc-100 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-cyan-400" />
+                  Skill Distribution Overview
+                </CardTitle>
+                <p className="text-xs text-zinc-500 mt-1">Breakdown of your skill completion status</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Pie Chart */}
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={skillDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
+                        >
+                          {skillDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#18181b', 
+                            border: '1px solid #374151', 
+                            borderRadius: '8px',
+                            color: '#fff'
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Legend and Stats */}
+                  <div className="flex flex-col justify-center space-y-4">
+                    {skillDistribution.map((item, index) => {
+                      const totalSkills = skillDistribution.reduce((sum, s) => sum + s.value, 0);
+                      const percentage = totalSkills > 0 ? Math.round((item.value / totalSkills) * 100) : 0;
+                      return (
+                        <div key={index} className="flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ backgroundColor: item.color }}
+                            ></div>
+                            <span className="text-sm font-medium text-zinc-300">{item.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-lg font-bold text-white">{item.value}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8">
               <CardHeader>
                 <CardTitle className="text-zinc-100 flex items-center gap-2">
@@ -394,72 +617,29 @@ const InsightsReports = () => {
                 <p className="text-xs text-zinc-500 mt-1">Steady growth from 50% to 64% based on learning activity</p>
               </CardHeader>
               <CardContent>
-                <div className="w-full h-[220px] bg-zinc-950/50 rounded-lg border border-zinc-800 p-4 mb-4">
+                <div className="w-full h-[320px] bg-zinc-950/50 rounded-lg border border-zinc-800 p-4 mb-4">
                   {generateSVGChart()}
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="p-3 bg-cyan-900/20 border border-cyan-900/50 rounded-lg">
                     <p className="text-xs text-zinc-400 mb-1">Total Growth</p>
-                    <p className="text-lg font-bold text-cyan-400">+14%</p>
+                    <p className="text-lg font-bold text-cyan-400">{reportSummary.readinessGain > 0 ? '+' : ''}{reportSummary.readinessGain}%</p>
                   </div>
                   <div className="p-3 bg-green-900/20 border border-green-900/50 rounded-lg">
                     <p className="text-xs text-zinc-400 mb-1">Avg Weekly Gain</p>
-                    <p className="text-lg font-bold text-green-400">+1.75%</p>
+                    <p className="text-lg font-bold text-green-400">+{(reportSummary.readinessGain / Math.max(readinessTrend.length, 1)).toFixed(1)}%</p>
                   </div>
                   <div className="p-3 bg-purple-900/20 border border-purple-900/50 rounded-lg">
                     <p className="text-xs text-zinc-400 mb-1">Courses Completed</p>
-                    <p className="text-lg font-bold text-purple-400">3</p>
+                    <p className="text-lg font-bold text-purple-400">{reportSummary.coursesCompleted}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* 4. Personalized Recommendations */}
-            <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8 border-l-4 border-l-green-500">
-              <CardHeader>
-                <CardTitle className="text-zinc-100 flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  Personalized Next Steps
-                </CardTitle>
-                <p className="text-xs text-zinc-500 mt-1">Highest ROI actions for the next 30 days</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recommendations.map((rec) => (
-                    <div key={rec.rank} className="p-4 bg-zinc-950/80 rounded-lg border border-zinc-800 hover:border-green-500/30 transition-colors">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-900/30 text-green-400 font-bold text-sm flex-shrink-0 border border-green-900/50">
-                          {rec.rank}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-zinc-200">{rec.skill}</h4>
-                          <p className="text-xs text-zinc-500 mt-1">{rec.reason}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-sm font-bold text-green-400">{rec.estimatedGain}</p>
-                          <p className="text-[10px] text-zinc-600 uppercase">gain</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-zinc-800 text-xs">
-                        <div className="flex gap-4">
-                           <span className="text-zinc-500">Duration: <span className="text-zinc-300">{rec.timeframe}</span></span>
-                           <span className="text-zinc-500">Course: <span className="text-zinc-300">{rec.course}</span></span>
-                        </div>
-                        <Button 
-                          onClick={() => navigate('/learning-path')} 
-                          size="sm" 
-                          className="h-7 text-xs bg-white text-black hover:bg-zinc-200 border-0"
-                        >
-                          Start Learning
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* 5. Benchmark & Time Insights */}
+
+            {/* 6. Benchmark & Time Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Benchmark Comparison */}
                 <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50">
@@ -539,7 +719,7 @@ const InsightsReports = () => {
                 </Card>
             </div>
 
-            {/* 7. Reports & Export */}
+            {/* 8. Reports & Export */}
             <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8 border-l-4 border-l-cyan-500">
               <CardHeader>
                 <CardTitle className="text-zinc-100 flex items-center gap-2">
@@ -605,34 +785,17 @@ const InsightsReports = () => {
 
                   <Button
                     onClick={() => handleExportReport(reportFormat)}
-                    className="h-12 px-8 bg-cyan-600 hover:bg-cyan-700 text-white font-bold flex items-center gap-2"
+                    disabled={downloading}
+                    className="h-12 px-8 bg-cyan-600 hover:bg-cyan-700 text-white font-bold flex items-center gap-2 disabled:opacity-50"
                   >
                     <Download className="h-4 w-4" />
-                    Download Report
+                    {downloading ? 'Downloading...' : 'Download Report'}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            {/* 8. Ethical & Data Transparency Note */}
-            <Card className="bg-amber-950/10 border border-amber-900/30 shadow-lg shadow-black/50 mb-8">
-              <CardHeader>
-                <CardTitle className="text-amber-200 flex items-center gap-2 text-sm">
-                  <AlertCircle className="h-4 w-4 text-amber-500" />
-                  Data Transparency & Ethical Use
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-xs text-amber-200/70">
-                  <p>
-                    <span className="font-semibold text-amber-400">📋 Insights are Advisory:</span> All recommendations provided are for career guidance only.
-                  </p>
-                  <p>
-                    <span className="font-semibold text-amber-400">🔒 Privacy First:</span> No patient data is stored or processed. Analysis is based solely on your skill profile.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+
 
           </div>
         </div>

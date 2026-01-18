@@ -40,6 +40,19 @@ const NewProgress = () => {
   };
 
   const handleMarkCompleted = async (skillId) => {
+    const skillIndex = careerAnalysis.skill_gap.findIndex(skill => skill._id === skillId);
+    
+    // Skip sequential logic for the first course (index 0)
+    if (skillIndex > 0) {
+      // Check if previous skills are completed (sequential logic)
+      const previousSkillsCompleted = careerAnalysis.skill_gap.slice(0, skillIndex).every(skill => skill.completed);
+      
+      if (!previousSkillsCompleted) {
+        toast.error('Please complete previous skills first!');
+        return;
+      }
+    }
+
     setIsUpdating(true);
     try {
       const response = await fetch(`/api/career-analysis/skill/${skillId}/complete`, {
@@ -82,9 +95,7 @@ const NewProgress = () => {
     { id: 'skill-analysis', label: 'Skill Analysis', icon: BookOpen },
     { id: 'learning-path', label: 'Learning Path', icon: Map },
     { id: 'progress-tracking', label: 'Progress Tracking', icon: TrendingUp },
-    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Help & Support', icon: HelpCircle }
+    { id: 'insights-reports', label: 'Insights & Reports', icon: BarChart3 }
   ];
 
   const handleMenuClick = (itemId) => {
@@ -250,40 +261,62 @@ const NewProgress = () => {
                     
                     {/* Timeline Items */}
                     <div className="space-y-8">
-                      {careerAnalysis.skill_gap.map((skill, index) => (
-                        <div key={skill._id || index} className="relative flex items-start gap-6">
-                          {/* Timeline Dot */}
-                          <button
-                            onClick={() => setSelectedSkill(skill)}
-                            className={`relative z-10 w-12 h-12 rounded-full border-4 flex items-center justify-center transition-all duration-200 ${
-                              skill.completed
-                                ? 'bg-cyan-500 border-cyan-400 text-white'
-                                : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:border-cyan-500'
-                            }`}
-                          >
-                            {skill.completed ? (
-                              <CheckCircle className="w-6 h-6" />
-                            ) : (
-                              <Circle className="w-6 h-6" />
-                            )}
-                          </button>
-                          
-                          {/* Timeline Content */}
-                          <div className="flex-1 pb-8">
-                            <div className="bg-zinc-950 rounded-lg p-4 border border-zinc-800">
-                              <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-bold text-white">{skill.skill_name}</h3>
-                                <span className={`px-2 py-1 rounded text-xs font-medium border ${getImportanceColor(skill.importance)}`}>
-                                  {skill.importance}
-                                </span>
+                      {careerAnalysis.skill_gap.map((skill, index) => {
+                        // Check if this skill can be accessed (all previous skills completed)
+                        // For the first skill (index 0), always allow access
+                        const canAccess = index === 0 || careerAnalysis.skill_gap.slice(0, index).every(s => s.completed);
+                        const isLocked = !canAccess && !skill.completed;
+                        
+                        return (
+                          <div key={skill._id || index} className="relative flex items-start gap-6">
+                            {/* Timeline Dot */}
+                            <button
+                              onClick={() => !isLocked && setSelectedSkill({ ...skill, index })}
+                              disabled={isLocked}
+                              className={`relative z-10 w-12 h-12 rounded-full border-4 flex items-center justify-center transition-all duration-200 ${
+                                skill.completed
+                                  ? 'bg-cyan-500 border-cyan-400 text-white'
+                                  : isLocked
+                                  ? 'bg-zinc-800 border-zinc-700 text-zinc-600 cursor-not-allowed opacity-50'
+                                  : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:border-cyan-500 cursor-pointer'
+                              }`}
+                            >
+                              {skill.completed ? (
+                                <CheckCircle className="w-6 h-6" />
+                              ) : (
+                                <Circle className="w-6 h-6" />
+                              )}
+                            </button>
+                            
+                            {/* Timeline Content */}
+                            <div className="flex-1 pb-8">
+                              <div className={`bg-zinc-950 rounded-lg p-4 border transition-all duration-200 ${
+                                isLocked ? 'border-zinc-800 opacity-50' : 'border-zinc-800 hover:border-cyan-500/30'
+                              }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h3 className={`font-bold ${
+                                    skill.completed ? 'text-cyan-400' : isLocked ? 'text-zinc-600' : 'text-white'
+                                  }`}>{skill.skill_name}</h3>
+                                  <span className={`px-2 py-1 rounded text-xs font-medium border ${getImportanceColor(skill.importance)}`}>
+                                    {skill.importance}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-zinc-400">
+                                  {skill.completed ? 'Completed' : 
+                                   isLocked ? 'Complete previous skills to unlock' : 
+                                   'Click to view resources and mark as complete'}
+                                </p>
+                                {isLocked && (
+                                  <div className="mt-2 text-xs text-zinc-600 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    Locked - Complete skill #{index} first
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-sm text-zinc-400">
-                                {skill.completed ? 'Completed' : 'Click to view resources and mark as complete'}
-                              </p>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 </CardContent>
