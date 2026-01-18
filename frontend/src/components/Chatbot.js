@@ -81,12 +81,12 @@ const Chatbot = () => {
                 className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[70%] rounded-lg p-3 ${message.type === 'user'
+                  className={`max-w-[70%] rounded-lg p-3 break-words overflow-wrap-anywhere ${message.type === 'user'
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
                       : 'bg-gray-100 text-gray-800'
                     }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
                 </div>
               </div>
             ))}

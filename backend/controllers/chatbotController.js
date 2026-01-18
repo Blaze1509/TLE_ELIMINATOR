@@ -1,3 +1,6 @@
+const ChatState = require('../models/ChatState');
+const axios = require('axios');
+
 // Chatbot controller with predefined responses
 const chatbotResponses = {
   greeting: [
@@ -74,27 +77,53 @@ exports.sendMessage = async (req, res) => {
       });
     }
 
+    const userId = user_id || req.user?.id || 'anonymous';
+
+    // Save user message to chat history
+    let chatState = await ChatState.findOne({ user_id: userId });
+    if (!chatState) {
+      chatState = new ChatState({
+        user_id: userId,
+        domain: 'healthcare_skills',
+        chat_history: []
+      });
+    }
+
+    chatState.chat_history.push({
+      role: 'user',
+      content: message
+    });
+
     // Call ngrok API
     const ngrokUrl = process.env.NGROK_API_URL;
     if (ngrokUrl) {
       try {
-        const axios = require('axios');
         console.log('Calling ngrok API:', ngrokUrl);
-        console.log('Payload:', { user_id: user_id || req.user?.id || 'anonymous', message });
+        console.log('Payload:', { user_id: userId, message });
         
         const response = await axios.post(ngrokUrl, {
-          user_id: user_id || req.user?.id || 'anonymous',
+          user_id: userId,
           message: message
         }, {
           headers: {
             'Content-Type': 'application/json'
           },
-          timeout: 10000
+          timeout: 300000
         });
+        
+        const botResponse = response.data.response || response.data.message || 'Response received';
+        
+        // Save bot response to chat history
+        chatState.chat_history.push({
+          role: 'assistant',
+          content: botResponse
+        });
+        
+        await chatState.save();
         
         return res.status(200).json({
           success: true,
-          message: response.data.response || response.data.message || 'Response received',
+          message: botResponse,
           timestamp: new Date().toISOString()
         });
       } catch (ngrokError) {
@@ -109,6 +138,15 @@ exports.sendMessage = async (req, res) => {
 
     // Fallback to local response if ngrok fails
     const botResponse = getResponse(message);
+    
+    // Save bot response to chat history
+    chatState.chat_history.push({
+      role: 'assistant',
+      content: botResponse
+    });
+    
+    await chatState.save();
+    
     res.status(200).json({
       success: true,
       message: botResponse,
