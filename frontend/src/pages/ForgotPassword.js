@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, KeyRound } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, KeyRound, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -133,66 +133,78 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-black text-white p-4">
+      {/* Card with Dark Theme */}
+      <Card className="w-full max-w-md bg-zinc-900 border-zinc-800 shadow-2xl shadow-black/50">
         <div className="p-8">
+          
+          {/* Header Icon */}
           <div className="flex justify-center mb-6">
-            <div className="p-3 bg-purple-100 rounded-full">
-              <KeyRound className="h-6 w-6 text-purple-600" />
+            <div className="p-4 bg-black rounded-full border border-zinc-800 shadow-lg shadow-cyan-900/20">
+              <KeyRound className="h-8 w-8 text-cyan-400" />
             </div>
           </div>
+          
+          {/* Title Area */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold mb-2 text-slate-900 tracking-wide">Reset Password</h2>
-            <p className="text-slate-500">
-              {step === 1 && 'Enter your email to receive OTP'}
-              {step === 2 && 'Enter the OTP sent to your email'}
-              {step === 3 && 'Set your new password'}
+            <h2 className="text-2xl font-bold mb-2 text-white tracking-wide">Reset Password</h2>
+            <p className="text-zinc-400 text-sm">
+              {step === 1 && 'Enter your email to receive a verification code'}
+              {step === 2 && 'Enter the 6-digit code sent to your email'}
+              {step === 3 && 'Secure your account with a new password'}
             </p>
           </div>
 
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center space-x-4 mb-8">
+          {/* Dark Mode Progress Indicator */}
+          <div className="flex items-center justify-center space-x-2 mb-8">
+            {/* Step 1 */}
             <div className="flex flex-col items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${
-                step >= 1 ? 'bg-purple-600 text-white shadow-lg' : 'bg-gray-200 text-gray-600'
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all border ${
+                step >= 1 ? 'bg-cyan-600 border-cyan-500 text-white shadow-[0_0_10px_rgba(8,145,178,0.5)]' : 'bg-zinc-800 border-zinc-700 text-zinc-500'
               }`}>
                 1
               </div>
-              <span className="text-xs text-slate-500 mt-1">Email</span>
             </div>
-            <div className={`h-1 w-12 transition-all ${step >= 2 ? 'bg-purple-600' : 'bg-gray-200'}`}></div>
+            
+            {/* Line 1 */}
+            <div className={`h-0.5 w-10 transition-all ${step >= 2 ? 'bg-cyan-600' : 'bg-zinc-800'}`}></div>
+            
+            {/* Step 2 */}
             <div className="flex flex-col items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${
-                step >= 2 ? 'bg-purple-600 text-white shadow-lg' : 'bg-gray-200 text-gray-600'
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all border ${
+                step >= 2 ? 'bg-cyan-600 border-cyan-500 text-white shadow-[0_0_10px_rgba(8,145,178,0.5)]' : 'bg-zinc-800 border-zinc-700 text-zinc-500'
               }`}>
                 2
               </div>
-              <span className="text-xs text-slate-500 mt-1">OTP</span>
             </div>
-            <div className={`h-1 w-12 transition-all ${step >= 3 ? 'bg-purple-600' : 'bg-gray-200'}`}></div>
+            
+            {/* Line 2 */}
+            <div className={`h-0.5 w-10 transition-all ${step >= 3 ? 'bg-cyan-600' : 'bg-zinc-800'}`}></div>
+            
+            {/* Step 3 */}
             <div className="flex flex-col items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition-all ${
-                step >= 3 ? 'bg-purple-600 text-white shadow-lg' : 'bg-gray-200 text-gray-600'
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-all border ${
+                step >= 3 ? 'bg-cyan-600 border-cyan-500 text-white shadow-[0_0_10px_rgba(8,145,178,0.5)]' : 'bg-zinc-800 border-zinc-700 text-zinc-500'
               }`}>
                 3
               </div>
-              <span className="text-xs text-slate-500 mt-1">Reset</span>
             </div>
           </div>
           
           <CardContent className="p-0">
+            {/* STEP 1: EMAIL */}
             {step === 1 && (
-              <form className="space-y-4" onSubmit={handleSendOTP}>
+              <form className="space-y-5" onSubmit={handleSendOTP}>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email" className="text-zinc-300">Email Address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-600" />
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
                       id="email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 enhanced-input"
+                      className="pl-10 bg-black border-zinc-700 text-white placeholder:text-zinc-600 focus:border-cyan-500 focus:ring-cyan-500/20"
                       placeholder="Enter your registered email"
                       required
                     />
@@ -201,42 +213,45 @@ const ForgotPassword = () => {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg shadow-purple-600/35 hover:shadow-xl hover:shadow-purple-600/45 hover:-translate-y-0.5 transition-all duration-200"
+                  className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-5 transition-all"
                 >
                   {isLoading ? 'Sending OTP...' : 'Send OTP'}
                 </Button>
               </form>
             )}
 
+            {/* STEP 2: OTP */}
             {step === 2 && (
-              <form className="space-y-4" onSubmit={handleVerifyOTP}>
+              <form className="space-y-5" onSubmit={handleVerifyOTP}>
                 <div className="space-y-2">
-                  <Label htmlFor="otp">Enter OTP</Label>
+                  <Label htmlFor="otp" className="text-zinc-300">Enter OTP</Label>
                   <Input
                     id="otp"
                     type="text"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="enhanced-input text-center text-lg tracking-widest"
+                    className="bg-black border-zinc-700 text-white text-center text-xl tracking-[0.5em] placeholder:text-zinc-700 focus:border-cyan-500 focus:ring-cyan-500/20"
                     placeholder="000000"
                     maxLength="6"
                     required
                   />
-                  <p className="text-xs text-slate-500 text-center">
-                    OTP sent to <span className="font-medium text-slate-700">{email}</span>
+                  <p className="text-xs text-zinc-500 text-center mt-2">
+                    Code sent to <span className="text-cyan-400">{email}</span>
                   </p>
+                  
                   {timeLeft > 0 && (
-                    <p className="text-xs text-purple-600 text-center font-medium">
-                      Time remaining: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+                    <p className="text-xs text-zinc-400 text-center font-medium">
+                      Expires in: <span className="text-white">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
                     </p>
                   )}
+                  
                   {canResend && (
-                    <div className="text-center">
+                    <div className="text-center pt-2">
                       <button
                         type="button"
                         onClick={handleResendOTP}
                         disabled={isLoading}
-                        className="text-sm enhanced-link"
+                        className="text-sm text-cyan-500 hover:text-cyan-400 underline underline-offset-4 transition-colors"
                       >
                         Resend OTP
                       </button>
@@ -246,25 +261,26 @@ const ForgotPassword = () => {
                 <Button
                   type="submit"
                   disabled={isLoading || timeLeft === 0}
-                  className="w-full bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg shadow-purple-600/35 hover:shadow-xl hover:shadow-purple-600/45 hover:-translate-y-0.5 transition-all duration-200"
+                  className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-5 transition-all"
                 >
                   {isLoading ? 'Verifying...' : 'Verify OTP'}
                 </Button>
               </form>
             )}
 
+            {/* STEP 3: NEW PASSWORD */}
             {step === 3 && (
-              <form className="space-y-4" onSubmit={handleResetPassword}>
+              <form className="space-y-5" onSubmit={handleResetPassword}>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword" classname="text-zinc-300">New Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-600" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
                       id="newPassword"
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="pl-10 pr-10 enhanced-input"
+                      className="pl-10 pr-10 bg-black border-zinc-700 text-white placeholder:text-zinc-600 focus:border-cyan-500 focus:ring-cyan-500/20"
                       placeholder="Enter new password"
                       required
                     />
@@ -272,28 +288,24 @@ const ForgotPassword = () => {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-zinc-500 hover:text-white"
                       onClick={() => setShowNewPassword(!showNewPassword)}
                     >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4 text-slate-600" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-slate-600" />
-                      )}
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword" classname="text-zinc-300">Confirm Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-600" />
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-zinc-500" />
                     <Input
                       id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 pr-10 enhanced-input"
+                      className="pl-10 pr-10 bg-black border-zinc-700 text-white placeholder:text-zinc-600 focus:border-cyan-500 focus:ring-cyan-500/20"
                       placeholder="Confirm new password"
                       required
                     />
@@ -301,14 +313,10 @@ const ForgotPassword = () => {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-zinc-500 hover:text-white"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-slate-600" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-slate-600" />
-                      )}
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
@@ -316,19 +324,20 @@ const ForgotPassword = () => {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg shadow-purple-600/35 hover:shadow-xl hover:shadow-purple-600/45 hover:-translate-y-0.5 transition-all duration-200"
+                  className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-5 transition-all"
                 >
-                  {isLoading ? 'Resetting Password...' : 'Reset Password'}
+                  {isLoading ? 'Resetting...' : 'Reset Password'}
                 </Button>
               </form>
             )}
 
-            <div className="mt-6 text-center">
+            <div className="mt-8 text-center">
               <Link 
                 to="/login" 
-                className="text-sm enhanced-link"
+                className="text-sm text-zinc-400 hover:text-white transition-colors flex items-center justify-center gap-2 group"
               >
-                ← Back to Login
+                <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                Back to Login
               </Link>
             </div>
           </CardContent>

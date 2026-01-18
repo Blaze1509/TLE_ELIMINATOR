@@ -3,7 +3,6 @@ import React from 'react';
 const navLinks = [
   { name: 'Home', href: '#' },
   { name: 'About Us', href: '#' },
-  { name: 'Features', href: '#' },
 ];
 
 const Navbar = ({ onLinkHover, onLinkLeave }) => {
@@ -15,7 +14,7 @@ const Navbar = ({ onLinkHover, onLinkLeave }) => {
         onMouseEnter={onLinkHover}
         onMouseLeave={onLinkLeave}
       >
-        SeaCreds
+        Career Synapse
         <span className="absolute bottom-[-4px] left-1/2 w-0 h-0.5 bg-white transition-all duration-300 ease-in-out transform -translate-x-1/2 group-hover:w-full"></span>
       </a>
       <div className="flex space-x-8">

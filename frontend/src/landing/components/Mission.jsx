@@ -38,6 +38,9 @@ const Mission = () => {
                 into an interactive experience where every skill, milestone, and learning 
                 resource becomes part of a dynamic, evolving professional roadmap.
               </p>
+
+              {/* Larger login option at the end */}
+      
             </div>
 
             <h3 className="text-3xl md:text-4xl font-bold mt-10 mb-4 text-black">
@@ -64,7 +67,7 @@ const Mission = () => {
                 onClick={() => navigate("/login")}
                 className="px-10 py-5 border border-black rounded-full bg-white text-black font-semibold shadow-md transition-all duration-300 hover:bg-black hover:text-white active:scale-95"
               >
-                Start Your Skill Roadmap
+                Login to Explore →
               </button>
             </div>
           </div>

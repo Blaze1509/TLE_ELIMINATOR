@@ -3,12 +3,13 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { gsap } from "https://cdn.skypack.dev/gsap";
 import { ScrollTrigger } from "https://cdn.skypack.dev/gsap/ScrollTrigger";
-import { ScrollToPlugin } from "https://cdn.skypack.dev/gsap/ScrollToPlugin"; // 1. IMPORT PLUGIN
+import { ScrollToPlugin } from "https://cdn.skypack.dev/gsap/ScrollToPlugin";
 import Mission from "./components/Mission.jsx";
 import Navbar from "./components/Navbar.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
-import Feature from "./components/Features.jsx";
-// 2. REGISTER BOTH PLUGINS
+// import Feature from "./components/Features.jsx";
+
+// Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 // --- 3D Globe Component ---
@@ -16,17 +17,14 @@ const GlobeModel = React.forwardRef((props, ref) => {
   const { scene } = useGLTF("/Earth.glb");
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Set up the ref and initial properties when model loads
   useEffect(() => {
     if (scene && ref) {
       ref.current = scene;
 
-      // Set initial position and scale BEFORE GSAP animations
       scene.position.set(0, 4, 0);
-      scene.scale.set(0.2, 0.2, 0.2); // Start scale (very small)
-      scene.rotation.set(0, 0, 0); // Start rotation
+      scene.scale.set(0.2, 0.2, 0.2);
+      scene.rotation.set(0, 0, 0);
 
-      // Prepare materials for fading
       scene.traverse((child) => {
         if (child.isMesh) {
           child.material.transparent = true;
@@ -35,14 +33,12 @@ const GlobeModel = React.forwardRef((props, ref) => {
 
       setIsLoaded(true);
 
-      // Notify parent that model is ready
       if (props.onLoaded) {
         props.onLoaded();
       }
     }
   }, [scene, ref, props]);
 
-  // Gentle rotation animation on every frame
   useFrame(() => {
     if (ref.current && isLoaded) {
       ref.current.rotation.y += 0.005;
@@ -65,23 +61,18 @@ export default function App() {
   const navRef = useRef(null);
   const [modelLoaded, setModelLoaded] = useState(false);
 
-  // Handle model loaded callback
   const handleModelLoaded = () => {
     setModelLoaded(true);
   };
 
-  // Set up GSAP animations AFTER model is loaded
   useLayoutEffect(() => {
     if (!modelLoaded || !globeRef.current) return;
 
-    // Small delay to ensure everything is ready
     const timer = setTimeout(() => {
       const ctx = gsap.context(() => {
-        // Set initial states explicitly
         gsap.set(titleRef.current, { opacity: 0, y: 50 });
         gsap.set(subtitleRef.current, { opacity: 0, y: 50 });
 
-        // --- SCROLL-TRIGGERED TIMELINE ---
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: heroSectionRef.current,
@@ -94,7 +85,6 @@ export default function App() {
           },
         });
 
-        // --- Part 1: Globe flies from top-center to final position ---
         tl.to(globeRef.current.scale, {
           x: 2.8,
           y: 2.8,
@@ -111,7 +101,7 @@ export default function App() {
               ease: "power2.out",
               duration: 3,
             },
-            "<" // Start at the same time
+            "<"
           )
           .to(
             titleRef.current,
@@ -121,7 +111,7 @@ export default function App() {
               ease: "power2.out",
               duration: 1.5,
             },
-            "-=1.5" // Start before previous ends
+            "-=1.5"
           )
           .to(
             subtitleRef.current,
@@ -131,14 +121,12 @@ export default function App() {
               ease: "power2.out",
               duration: 1.5,
             },
-            "-=1.3" // Slight stagger
+            "-=1.3"
           );
 
-        // Hold in center
         tl.to({}, { duration: 1 });
 
-        // --- Part 2: Globe recedes into the background and fades out ---
-        const fadeOutObject = { opacity: 1 }; // Helper object for opacity tween
+        const fadeOutObject = { opacity: 1 };
 
         tl.to(globeRef.current.scale, {
           x: 0.1,
@@ -186,7 +174,6 @@ export default function App() {
             "<0.5"
           );
 
-        // --- NAVBAR ANIMATION ---
         ScrollTrigger.create({
           trigger: contentSectionRef.current,
           start: "top 90%",
@@ -208,14 +195,11 @@ export default function App() {
             }),
         });
 
-        // 3. ✨ ADD THE AUTO-SCROLL ANIMATION ✨
-        // This tween will animate the window's scroll position.
-        // ScrollTrigger will detect this scroll and animate your timeline accordingly.
         gsap.to(window, {
-          scrollTo: 3000, // The scroll distance should match the 'end' of your timeline
-          duration: 10, // How long the auto-scroll should take
-          ease: "power2.inOut", // A smooth easing function
-          delay: 1, // A 1-second delay after load before starting the scroll
+          scrollTo: 3000,
+          duration: 10,
+          ease: "power2.inOut",
+          delay: 1,
         });
       }, mainContainerRef);
 
@@ -228,12 +212,8 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [modelLoaded]);
 
-  // Refresh ScrollTrigger on window resize
   useEffect(() => {
-    const handleResize = () => {
-      ScrollTrigger.refresh();
-    };
-
+    const handleResize = () => ScrollTrigger.refresh();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -254,9 +234,9 @@ export default function App() {
           box-sizing: border-box;
         }
       `}</style>
+
       <CustomCursor>
         <main ref={mainContainerRef} className="w-full">
-          {/* --- Sticky Navbar --- */}
           <nav
             ref={navRef}
             className="fixed top-0 left-0 w-full z-50 p-4 opacity-0 -translate-y-full"
@@ -268,19 +248,16 @@ export default function App() {
             <Navbar />
           </nav>
 
-          {/* --- Hero Section --- */}
           <section
             ref={heroSectionRef}
             className="h-screen w-full relative overflow-hidden bg-[#0a0a0a]"
           >
-            {/* Loading indicator */}
             {!modelLoaded && (
               <div className="absolute inset-0 flex items-center justify-center z-50">
                 <div className="text-white text-xl">Loading Earth...</div>
               </div>
             )}
 
-            {/* Text Container - Positioned to be partially covered by globe */}
             <div
               ref={textContainerRef}
               className="absolute inset-0 flex flex-col items-center justify-start pt-48 text-center z-10 pointer-events-none"
@@ -289,19 +266,18 @@ export default function App() {
                 ref={titleRef}
                 className="text-7xl md:text-9xl font-extrabold tracking-tighter opacity-0 text-white relative z-10"
               >
-                SeaCreds
+                Career Synapse
               </h1>
               <p
                 ref={subtitleRef}
                 className="text-lg md:text-2xl mt-6 max-w-2xl text-gray-300 opacity-0 relative z-10"
               >
-                A next-gen blockchain registry for
-                <br />
-                ocean and mangrove carbon credits.
+                An intelligent platform where skills evolve into real-world.
+                <br/>
+                Bridging talent with transformative career paths.
               </p>
             </div>
 
-            {/* 3D Canvas Container */}
             <div
               ref={canvasContainerRef}
               className="absolute w-full h-full top-0 left-0 z-20"
@@ -319,13 +295,12 @@ export default function App() {
             </div>
           </section>
 
-          {/* --- Content Section --- */}
           <section
             ref={contentSectionRef}
             className="relative z-30 min-h-screen"
           >
             <Mission />
-            <Feature />
+            {/* <Feature /> */}
           </section>
         </main>
       </CustomCursor>

@@ -14,6 +14,8 @@ import LearningPath from './pages/LearningPath';
 import ProgressTracking from './pages/ProgressTracking';
 import SkillAnalysis from './pages/SkillAnalysis';
 import InsightsReports from './pages/InsightsReports';
+import Settings from './pages/Settings';
+import HelpSupport from './pages/HelpSupport';
 import ForgotPassword from './pages/ForgotPassword';
 
 import './index.css';
@@ -72,6 +74,14 @@ function App() {
           <Route 
             path="/insights-reports" 
             element={token ? <InsightsReports /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/settings" 
+            element={token ? <Settings /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/help-support" 
+            element={token ? <HelpSupport /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, Plus, Check, Clock, Trash2, ChevronRight, Star, Zap } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, Plus, Check, Clock, Trash2, ChevronRight, Star, Zap, Activity, PlayCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import useAuthStore from '../store/authStore';
@@ -10,21 +10,30 @@ const LearningPath = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('learning-path');
-  const [learningPath, setLearningPath] = useState([]);
+  
+  // Sample Data for Visualization
+  const [learningPath, setLearningPath] = useState([
+    { id: 101, courseTitle: 'HL7 Fundamentals', skill: 'HL7 Standards', status: 'in-progress', progress: 45, platform: 'Coursera', duration: '5h' },
+    { id: 102, courseTitle: 'Python for Health Data', skill: 'Python', status: 'not-started', progress: 0, platform: 'Udemy', duration: '12h' }
+  ]);
 
-  // Empty recommended courses until backend provides data
-  const recommendedCourses = [];
+  const recommendedCourses = [
+    { id: 1, title: 'FHIR for Developers', skill: 'FHIR API', platform: 'Pluralsight', difficulty: 'Intermediate', rating: 4.8, duration: '8h', explanation: 'Directly addresses your missing FHIR skill gap.' },
+    { id: 2, title: 'HIPAA Compliance Masterclass', skill: 'HIPAA', platform: 'LinkedIn Learning', difficulty: 'Beginner', rating: 4.5, duration: '4h', explanation: 'Essential for the Target Role requirements.' }
+  ];
 
-  // Learning path overview data
   const pathOverview = {
     targetRole: 'Health Informatics Engineer',
-    skillsToAcquire: 0,
-    estimatedDuration: '0 weeks',
-    progress: 0,
-    expectedReadinessIncrease: 0
+    skillsToAcquire: 5,
+    estimatedDuration: '6 weeks',
+    progress: 15,
+    expectedReadinessIncrease: 28
   };
 
-  const skillImpactData = [];
+  const skillImpactData = [
+    { skill: 'HL7 Standards', currentLevel: 'Novice', expectedLevel: 'Competent', impact: 'High' },
+    { skill: 'Python', currentLevel: 'Beginner', expectedLevel: 'Intermediate', impact: 'Medium' }
+  ];
 
   const handleLogout = () => {
     logout();
@@ -44,21 +53,13 @@ const LearningPath = () => {
   ];
 
   const handleMenuClick = (itemId) => {
-    if (itemId === 'dashboard') {
-      navigate('/dashboard-main');
-    } else if (itemId === 'skills-profile') {
-      navigate('/skills-profile');
-    } else if (itemId === 'learning-path') {
-      navigate('/learning-path');
-    } else if (itemId === 'progress-tracking') {
-      navigate('/progress-tracking');
-    } else if (itemId === 'skill-analysis') {
-      navigate('/skill-analysis');
-    } else if (itemId === 'insights-reports') {
-      navigate('/insights-reports');
-    } else {
-      setActiveSection(itemId);
-    }
+    if (itemId === 'dashboard') navigate('/dashboard-main');
+    else if (itemId === 'skills-profile') navigate('/skills-profile');
+    else if (itemId === 'learning-path') navigate('/learning-path');
+    else if (itemId === 'progress-tracking') navigate('/progress-tracking');
+    else if (itemId === 'skill-analysis') navigate('/skill-analysis');
+    else if (itemId === 'insights-reports') navigate('/insights-reports');
+    else setActiveSection(itemId);
   };
 
   const handleAddCourse = (course) => {
@@ -97,41 +98,46 @@ const LearningPath = () => {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'Beginner': return 'bg-blue-100 text-blue-800';
-      case 'Intermediate': return 'bg-green-100 text-green-800';
-      case 'Advanced': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Beginner': return 'bg-cyan-900/30 text-cyan-300 border border-cyan-800/50';
+      case 'Intermediate': return 'bg-blue-900/30 text-blue-300 border border-blue-800/50';
+      case 'Advanced': return 'bg-purple-900/30 text-purple-300 border border-purple-800/50';
+      default: return 'bg-zinc-800 text-zinc-400';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black text-white">
       <div className="flex h-screen">
+        
         {/* Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 panel-divider flex flex-col">
-          <div className="p-6 border-b border-gray-200">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
-              🏥 HealthCare+
+        <div className="w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+          <div className="p-6 border-b border-zinc-800">
+            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+              <Activity className="h-6 w-6 text-cyan-400" />
+              <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Career Synapse
+              </span>
             </h1>
-            <p className="text-xs text-gray-500 mt-1">Skill Intelligence</p>
+            <p className="text-xs text-zinc-500 mt-1 pl-8">Skill Intelligence</p>
           </div>
 
           <nav className="flex-1 overflow-y-auto py-6 px-4">
             <ul className="space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = activeSection === item.id;
                 return (
                   <li key={item.id}>
                     <button
                       onClick={() => handleMenuClick(item.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                        activeSection === item.id
-                          ? 'bg-blue-50 text-blue-600 border border-blue-200 font-semibold'
-                          : 'text-gray-700 hover:bg-gray-50'
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 border ${
+                        isActive
+                          ? 'bg-cyan-950/30 text-cyan-400 border-cyan-900/50 shadow-[0_0_10px_rgba(34,211,238,0.1)]'
+                          : 'text-zinc-400 border-transparent hover:bg-zinc-800 hover:text-white'
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-cyan-400' : 'text-zinc-500'}`} />
+                      <span className="font-medium">{item.label}</span>
                     </button>
                   </li>
                 );
@@ -139,17 +145,17 @@ const LearningPath = () => {
             </ul>
           </nav>
 
-          <div className="border-t border-gray-200 p-4 space-y-3">
-            <div className="px-4 py-2 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-600">Logged in as</p>
-              <p className="text-sm font-semibold text-gray-900 truncate">
+          <div className="border-t border-zinc-800 p-4 space-y-3 bg-zinc-900/50">
+            <div className="px-4 py-3 bg-black/40 rounded-lg border border-zinc-800">
+              <p className="text-xs text-zinc-500 mb-1">Logged in as</p>
+              <p className="text-sm font-semibold text-white truncate">
                 {user?.username || user?.email || 'User'}
               </p>
             </div>
             <Button
               onClick={handleLogout}
               variant="destructive"
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 bg-red-950/20 text-red-400 hover:bg-red-900/40 border border-red-900/30"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
@@ -158,50 +164,56 @@ const LearningPath = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          <div className="bg-white border-b border-gray-200 px-8 py-4">
-            <h2 className="text-2xl font-bold text-gray-900">Learning Path</h2>
-            <p className="text-sm text-gray-600">Transform skill gaps into a personalized learning journey</p>
+        <div className="flex-1 flex flex-col bg-black overflow-hidden">
+          <div className="bg-zinc-900/50 backdrop-blur-md border-b border-zinc-800 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Learning Path</h2>
+              <p className="text-sm text-zinc-400">Curated roadmap to close your skill gaps</p>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto py-8 px-8">
+          <div className="flex-1 overflow-y-auto py-8 px-8 custom-scrollbar">
+            
             {/* Learning Path Overview */}
-            <Card className="shadow-lg border-0 mb-8 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8 overflow-hidden relative">
+              {/* Background gradient splash */}
+              <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+              
               <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
-                  <Map className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-zinc-100 flex items-center gap-2 relative z-10">
+                  <Map className="h-5 w-5 text-cyan-400" />
                   Your Learning Path Overview
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-4 gap-6 mb-6">
+              <CardContent className="relative z-10">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                   <div>
-                    <p className="text-xs text-gray-600 uppercase tracking-wide">Target Role</p>
-                    <p className="text-lg font-semibold text-gray-900 mt-1">{pathOverview.targetRole}</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Target Role</p>
+                    <p className="text-lg font-bold text-white mt-1">{pathOverview.targetRole}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 uppercase tracking-wide">Skills to Acquire</p>
-                    <p className="text-lg font-semibold text-blue-600 mt-1">{pathOverview.skillsToAcquire}</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Skills to Acquire</p>
+                    <p className="text-lg font-bold text-cyan-400 mt-1">{pathOverview.skillsToAcquire}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 uppercase tracking-wide">Est. Duration</p>
-                    <p className="text-lg font-semibold text-gray-900 mt-1">{pathOverview.estimatedDuration}</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Est. Duration</p>
+                    <p className="text-lg font-bold text-white mt-1">{pathOverview.estimatedDuration}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 uppercase tracking-wide">Readiness Boost</p>
-                    <p className="text-lg font-semibold text-green-600 mt-1">+{pathOverview.expectedReadinessIncrease}%</p>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Readiness Boost</p>
+                    <p className="text-lg font-bold text-green-400 mt-1">+{pathOverview.expectedReadinessIncrease}%</p>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-                    <span className="text-sm font-bold text-blue-600">{pathOverview.progress}%</span>
+                    <span className="text-sm font-medium text-zinc-300">Overall Progress</span>
+                    <span className="text-sm font-bold text-cyan-400">{pathOverview.progress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
+                  <div className="w-full bg-zinc-800 h-3 rounded-full overflow-hidden border border-zinc-700">
                     <div
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-cyan-600 to-cyan-400 h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
                       style={{ width: `${pathOverview.progress}%` }}
                     />
                   </div>
@@ -210,9 +222,9 @@ const LearningPath = () => {
             </Card>
 
             {/* Recommended Courses */}
-            <Card className="shadow-lg border-0 mb-8">
+            <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 mb-8 border-l-4 border-l-yellow-500">
               <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
+                <CardTitle className="text-zinc-100 flex items-center gap-2">
                   <Zap className="h-5 w-5 text-yellow-500" />
                   Recommended Courses (AI-Curated)
                 </CardTitle>
@@ -220,68 +232,72 @@ const LearningPath = () => {
               <CardContent>
                 {recommendedCourses.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4">
-                    {recommendedCourses.map((course) => (
-                      <div
-                        key={course.id}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900">{course.title}</h3>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs px-2 py-1 bg-gray-200 text-gray-700 rounded">
-                                {course.platform}
-                              </span>
-                              <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(course.difficulty)}`}>
-                                {course.difficulty}
-                              </span>
-                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                {course.skill}
-                              </span>
+                    {recommendedCourses.map((course) => {
+                      // Check if course is already in the path
+                      const isAdded = learningPath.some(p => p.courseTitle === course.title);
+                      
+                      return (
+                        <div
+                          key={course.id}
+                          className="p-5 border border-zinc-800 bg-zinc-950/50 rounded-lg hover:border-cyan-500/30 transition-all duration-200 group"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-bold text-white text-lg group-hover:text-cyan-400 transition-colors">{course.title}</h3>
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                <span className="text-xs px-2 py-1 bg-zinc-800 text-zinc-300 rounded border border-zinc-700">
+                                  {course.platform}
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded ${getDifficultyColor(course.difficulty)}`}>
+                                  {course.difficulty}
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-blue-900/20 text-blue-300 rounded border border-blue-900/30">
+                                  {course.skill}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 bg-yellow-950/20 px-2 py-1 rounded border border-yellow-900/30">
+                                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                                <span className="text-xs font-bold text-yellow-500">{course.rating}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                              <span className="text-sm font-semibold text-gray-900">{course.rating}</span>
-                            </div>
-                          </div>
-                        </div>
 
-                        <p className="text-sm text-gray-600 mb-3 italic">
-                          "{course.explanation}"
-                        </p>
+                          <p className="text-sm text-zinc-400 mb-4 italic pl-3 border-l-2 border-zinc-700">
+                            "{course.explanation}"
+                          </p>
 
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {course.duration}
-                          </span>
-                          {course.alreadyAdded ? (
-                            <span className="text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium flex items-center gap-1">
-                              <Check className="h-3 w-3" />
-                              Added to Path
+                          <div className="flex items-center justify-between mt-4">
+                            <span className="text-xs text-zinc-500 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {course.duration}
                             </span>
-                          ) : (
-                            <Button
-                              onClick={() => handleAddCourse(course)}
-                              size="sm"
-                              className="enhanced-button text-sm"
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Add to Path
-                            </Button>
-                          )}
+                            {isAdded ? (
+                              <span className="text-xs px-3 py-1 bg-green-900/30 text-green-400 rounded-full font-medium flex items-center gap-1 border border-green-900/50">
+                                <Check className="h-3 w-3" />
+                                Added to Path
+                              </span>
+                            ) : (
+                              <Button
+                                onClick={() => handleAddCourse(course)}
+                                size="sm"
+                                className="bg-cyan-600 hover:bg-cyan-700 text-white border-0 h-8 text-xs"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add to Path
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-2">No course recommendations available</p>
-                    <p className="text-sm text-gray-400 mb-4">Complete a skill analysis to get personalized course recommendations</p>
-                    <Button onClick={() => navigate('/skill-analysis')} variant="outline">
+                    <BookOpen className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+                    <p className="text-zinc-500 mb-4">No course recommendations available. Complete a skill analysis first.</p>
+                    <Button onClick={() => navigate('/skill-analysis')} variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                       Start Analysis
                     </Button>
                   </div>
@@ -291,65 +307,66 @@ const LearningPath = () => {
 
             {/* My Learning Path */}
             <div className="space-y-6 mb-8">
+              
               {/* In Progress */}
               {inProgressCourses.length > 0 && (
-                <Card className="shadow-lg border-0 border-l-4 border-l-blue-500">
+                <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 border-l-4 border-l-cyan-500">
                   <CardHeader>
-                    <CardTitle className="text-gray-900 flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-blue-500" />
+                    <CardTitle className="text-zinc-100 flex items-center gap-2">
+                      <PlayCircle className="h-5 w-5 text-cyan-400" />
                       In Progress ({inProgressCourses.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {inProgressCourses.map((course) => (
-                        <div key={course.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div key={course.id} className="p-4 bg-zinc-950/80 rounded-lg border border-cyan-900/30 shadow-[0_0_15px_rgba(8,145,178,0.05)]">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900">{course.courseTitle}</h4>
-                              <p className="text-xs text-gray-600 mt-1">Skill: <span className="font-medium">{course.skill}</span> | Platform: {course.platform}</p>
+                              <h4 className="font-semibold text-white">{course.courseTitle}</h4>
+                              <p className="text-xs text-zinc-400 mt-1">Skill: <span className="text-cyan-400">{course.skill}</span> | Platform: {course.platform}</p>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleRemoveCourse(course.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-zinc-600 hover:text-red-400 hover:bg-red-950/20 p-1 h-auto"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
 
                           {/* Progress Bar */}
-                          <div className="mb-3">
+                          <div className="mb-4">
                             <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs font-medium text-gray-700">Progress</span>
-                              <span className="text-xs font-bold text-blue-600">{course.progress}%</span>
+                              <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">Progress</span>
+                              <span className="text-xs font-bold text-cyan-400">{course.progress}%</span>
                             </div>
-                            <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                               <div
-                                className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full transition-all duration-300"
+                                className="bg-cyan-500 h-full rounded-full transition-all duration-300"
                                 style={{ width: `${course.progress}%` }}
                               />
                             </div>
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 justify-end">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleProgressUpdate(course.id, 'in-progress', Math.min(course.progress + 15, 100))}
-                              className="text-xs"
+                              className="text-xs h-7 border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800"
                             >
-                              Update Progress
+                              +15% Progress
                             </Button>
                             <Button
                               size="sm"
-                              className="enhanced-button text-xs"
                               onClick={() => handleProgressUpdate(course.id, 'completed', 100)}
+                              className="text-xs h-7 bg-white text-black hover:bg-zinc-200 border-0"
                             >
                               <Check className="h-3 w-3 mr-1" />
-                              Mark Complete
+                              Complete
                             </Button>
                           </div>
                         </div>
@@ -361,27 +378,27 @@ const LearningPath = () => {
 
               {/* Not Started */}
               {notStartedCourses.length > 0 && (
-                <Card className="shadow-lg border-0 border-l-4 border-l-yellow-500">
+                <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 border-l-4 border-l-zinc-600">
                   <CardHeader>
-                    <CardTitle className="text-gray-900 flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-yellow-500" />
+                    <CardTitle className="text-zinc-100 flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-zinc-500" />
                       Not Started ({notStartedCourses.length})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {notStartedCourses.map((course) => (
-                        <div key={course.id} className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 hover:bg-yellow-100 transition-all">
+                        <div key={course.id} className="p-4 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-zinc-700 transition-all opacity-80 hover:opacity-100">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900">{course.courseTitle}</h4>
-                              <p className="text-xs text-gray-600 mt-1">Skill: <span className="font-medium">{course.skill}</span> | Platform: {course.platform}</p>
-                              <p className="text-xs text-gray-500 mt-1">Duration: {course.duration}</p>
+                              <h4 className="font-semibold text-zinc-300">{course.courseTitle}</h4>
+                              <p className="text-xs text-zinc-500 mt-1">Skill: {course.skill} | Platform: {course.platform}</p>
+                              <p className="text-xs text-zinc-600 mt-1 flex items-center gap-1"><Clock className="h-3 w-3" /> {course.duration}</p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
                               <Button
                                 size="sm"
-                                className="enhanced-button text-xs"
+                                className="bg-zinc-800 text-white hover:bg-cyan-600 hover:text-white border-0 text-xs h-8"
                                 onClick={() => handleProgressUpdate(course.id, 'in-progress', 10)}
                               >
                                 <ChevronRight className="h-3 w-3 mr-1" />
@@ -391,7 +408,7 @@ const LearningPath = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveCourse(course.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-zinc-600 hover:text-red-400 hover:bg-red-950/20 p-1 h-auto"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -406,9 +423,9 @@ const LearningPath = () => {
 
               {/* Completed */}
               {completedCourses.length > 0 && (
-                <Card className="shadow-lg border-0 border-l-4 border-l-green-500">
+                <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 border-l-4 border-l-green-600 opacity-70 hover:opacity-100 transition-opacity">
                   <CardHeader>
-                    <CardTitle className="text-gray-900 flex items-center gap-2">
+                    <CardTitle className="text-zinc-100 flex items-center gap-2">
                       <Check className="h-5 w-5 text-green-500" />
                       Completed ({completedCourses.length})
                     </CardTitle>
@@ -416,14 +433,14 @@ const LearningPath = () => {
                   <CardContent>
                     <div className="space-y-3">
                       {completedCourses.map((course) => (
-                        <div key={course.id} className="p-3 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-semibold text-gray-900">{course.courseTitle}</h4>
-                              <p className="text-xs text-gray-600">Skill: {course.skill}</p>
-                            </div>
-                            <span className="text-green-600 font-bold">✓ Completed</span>
+                        <div key={course.id} className="p-3 bg-green-950/10 rounded-lg border border-green-900/20 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold text-zinc-400 line-through decoration-zinc-600">{course.courseTitle}</h4>
+                            <p className="text-xs text-zinc-600">Skill: {course.skill}</p>
                           </div>
+                          <span className="text-green-500 font-bold text-xs flex items-center gap-1">
+                            <Check className="h-3 w-3" /> Done
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -434,32 +451,32 @@ const LearningPath = () => {
 
             {/* Skill Impact Summary */}
             {skillImpactData.length > 0 && (
-              <Card className="shadow-lg border-0 border-l-4 border-l-purple-500">
+              <Card className="bg-zinc-900 border-zinc-800 shadow-lg shadow-black/50 border-l-4 border-l-purple-500">
                 <CardHeader>
-                  <CardTitle className="text-gray-900 flex items-center gap-2">
+                  <CardTitle className="text-zinc-100 flex items-center gap-2">
                     <Zap className="h-5 w-5 text-purple-500" />
                     Skill Impact Summary
                   </CardTitle>
-                  <p className="text-xs text-gray-600 mt-2">Completing your current learning path will improve:</p>
+                  <p className="text-xs text-zinc-500 mt-2">Completing your current learning path will improve:</p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {skillImpactData.map((item, index) => (
-                      <div key={index} className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <div key={index} className="p-4 bg-purple-950/10 rounded-lg border border-purple-900/30">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-gray-900">{item.skill}</span>
-                          <span className="text-sm font-bold text-green-600">{item.impact}</span>
+                          <span className="font-semibold text-purple-200">{item.skill}</span>
+                          <span className="text-sm font-bold text-green-400">{item.impact} Impact</span>
                         </div>
-                        <div className="text-xs text-gray-600 space-y-1">
-                          <p>Current: <span className="font-medium text-gray-900">{item.currentLevel}</span></p>
-                          <p>Expected: <span className="font-medium text-gray-900">{item.expectedLevel}</span></p>
+                        <div className="text-xs text-zinc-400 space-y-1">
+                          <p>Current: <span className="font-medium text-zinc-200">{item.currentLevel}</span></p>
+                          <p>Expected: <span className="font-medium text-green-400">{item.expectedLevel}</span></p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-6 p-4 bg-green-100 border border-green-300 rounded-lg">
-                    <p className="text-sm font-semibold text-green-900">
-                      📈 Your overall readiness will increase by <span className="text-lg">+{pathOverview.expectedReadinessIncrease}%</span> after completing this path!
+                  <div className="mt-6 p-4 bg-green-950/20 border border-green-900/30 rounded-lg">
+                    <p className="text-sm font-semibold text-green-300">
+                      📈 Your overall readiness will increase by <span className="text-lg text-white">+{pathOverview.expectedReadinessIncrease}%</span> after completing this path!
                     </p>
                   </div>
                 </CardContent>
