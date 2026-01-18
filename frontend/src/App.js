@@ -11,7 +11,7 @@ import AuthSuccess from './pages/AuthSuccess';
 import Dashboard from './pages/Dashboard';
 import SkillsProfile from './pages/SkillsProfile';
 import LearningPath from './pages/LearningPath';
-import ProgressTracking from './pages/ProgressTracking';
+import NewProgress from './pages/NewProgress';
 import SkillAnalysis from './pages/SkillAnalysis';
 import InsightsReports from './pages/InsightsReports';
 import Settings from './pages/Settings';
@@ -64,7 +64,11 @@ function App() {
           />
           <Route 
             path="/progress-tracking" 
-            element={token ? <ProgressTracking /> : <Navigate to="/login" />} 
+            element={token ? <NewProgress /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/new-progress" 
+            element={token ? <NewProgress /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/skill-analysis" 

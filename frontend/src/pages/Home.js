@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, BookOpen, TrendingUp, Map, BarChart3, Settings, HelpCircle, Activity } from 'lucide-react';
 import SkillAnalysisForm from '../components/SkillAnalysisForm';
 import AnalysisCard from '../components/AnalysisCard';
 import apiClient from '../api/apiClient';
@@ -52,6 +52,8 @@ const Home = () => {
       navigate('/skills-profile');
     } else if (itemId === 'skill-analysis') {
       navigate('/dashboard');
+    } else if (itemId === 'progress-tracking') {
+      navigate('/new-progress');
     } else if (itemId === 'settings') {
       navigate('/settings');
     } else if (itemId === 'help') {

@@ -214,3 +214,76 @@ exports.getCareerAnalysis = async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to fetch career analysis' });
   }
 };
+
+// Get latest career analysis
+exports.getLatestAnalysis = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const analysis = await CareerAnalysis.findOne({ 
+      userId: decoded.userId,
+      analysis_completed: true 
+    }).sort({ createdAt: -1 });
+
+    if (!analysis) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'No completed analysis found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      analysis
+    });
+  } catch (error) {
+    console.error('Get latest analysis error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch analysis' });
+  }
+};
+
+// Mark skill as completed
+exports.markSkillCompleted = async (req, res) => {
+  try {
+    const { skillId } = req.params;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const analysis = await CareerAnalysis.findOne({ 
+      userId: decoded.userId,
+      analysis_completed: true,
+      'skill_gap._id': skillId
+    });
+
+    if (!analysis) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Analysis or skill not found' 
+      });
+    }
+
+    // Update the specific skill's completed status
+    const skill = analysis.skill_gap.id(skillId);
+    if (skill) {
+      skill.completed = true;
+      await analysis.save();
+    }
+
+    res.json({
+      success: true,
+      message: 'Skill marked as completed'
+    });
+  } catch (error) {
+    console.error('Mark skill completed error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update skill' });
+  }
+};
