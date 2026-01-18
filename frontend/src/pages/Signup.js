@@ -163,7 +163,7 @@ const Signup = () => {
                 variant="outline"
                 className="bg-black border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
                 onClick={() => {
-                  window.location.href = 'http://localhost:5001/api/auth/google';
+                  window.location.href = 'http://localhost:5000/api/auth/google';
                 }}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -179,7 +179,7 @@ const Signup = () => {
                 variant="outline"
                 className="bg-black border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
                 onClick={() => {
-                  window.location.href = 'http://localhost:5001/api/auth/github';
+                  window.location.href = 'http://localhost:5000/api/auth/github';
                 }}
               >
                 <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

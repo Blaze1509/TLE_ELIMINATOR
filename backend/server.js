@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
 const pdfRoutes = require('./routes/pdfRoutes');
 const careerAnalysisRoutes = require('./routes/careerAnalysisRoutes');
+const chatbotRoutes = require('./routes/chatbotRoutes');
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/career-analysis', careerAnalysisRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

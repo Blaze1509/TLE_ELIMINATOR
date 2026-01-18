@@ -24,6 +24,22 @@ config/secrets.js
 *.p12
 *.pfx
 
+# OAuth & Authentication
+GOOGLE_CLIENT_SECRET
+GITHUB_CLIENT_SECRET
+JWT_SECRET
+
+# Database & External APIs
+MONGODB_URI
+NGROK_API_URL
+MODEL_PREDICT_URL
+MODEL_ANALYZE_URL
+NGROK_PDF_API
+
+# Email Credentials
+EMAIL_PASS
+EMAIL_USER
+
 # Build outputs
 /frontend/build
 /frontend/dist
