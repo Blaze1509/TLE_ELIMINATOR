@@ -223,13 +223,26 @@ const InsightsReports = () => {
     const effectiveWidth = chartWidth - padding * 2;
     const effectiveHeight = chartHeight - padding * 2;
 
-    let path = `M ${padding + (0 * effectiveWidth) / (readinessTrend.length - 1)} ${
-      padding + effectiveHeight - (readinessTrend[0].readiness / 100) * effectiveHeight
+    // Ensure we have valid numeric values
+    const validTrend = readinessTrend.filter(item => 
+      item && typeof item.readiness === 'number' && !isNaN(item.readiness)
+    );
+
+    if (validTrend.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full text-zinc-500">
+          No valid trend data available
+        </div>
+      );
+    }
+
+    let path = `M ${padding + (0 * effectiveWidth) / Math.max(validTrend.length - 1, 1)} ${
+      padding + effectiveHeight - (validTrend[0].readiness / 100) * effectiveHeight
     }`;
 
-    for (let i = 1; i < readinessTrend.length; i++) {
-      const x = padding + (i * effectiveWidth) / (readinessTrend.length - 1);
-      const y = padding + effectiveHeight - (readinessTrend[i].readiness / 100) * effectiveHeight;
+    for (let i = 1; i < validTrend.length; i++) {
+      const x = padding + (i * effectiveWidth) / Math.max(validTrend.length - 1, 1);
+      const y = padding + effectiveHeight - (validTrend[i].readiness / 100) * effectiveHeight;
       path += ` L ${x} ${y}`;
     }
 
@@ -249,11 +262,11 @@ const InsightsReports = () => {
         })}
 
         {/* X-axis labels */}
-        {readinessTrend.map((data, index) => {
-          const x = padding + (index * effectiveWidth) / (readinessTrend.length - 1);
+        {validTrend.map((data, index) => {
+          const x = padding + (index * effectiveWidth) / Math.max(validTrend.length - 1, 1);
           return (
             <text key={`label-${index}`} x={x} y={chartHeight - 10} fontSize="10" textAnchor="middle" fill="#71717a">
-              {data.week}
+              {data.week || `Week ${index + 1}`}
             </text>
           );
         })}
@@ -270,8 +283,8 @@ const InsightsReports = () => {
         <path d={path} stroke="url(#chartGradient)" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]" />
 
         {/* Data points */}
-        {readinessTrend.map((data, index) => {
-          const x = padding + (index * effectiveWidth) / (readinessTrend.length - 1);
+        {validTrend.map((data, index) => {
+          const x = padding + (index * effectiveWidth) / Math.max(validTrend.length - 1, 1);
           const y = padding + effectiveHeight - (data.readiness / 100) * effectiveHeight;
           return (
             <circle key={`point-${index}`} cx={x} cy={y} r="4" fill="#18181b" stroke="#22d3ee" strokeWidth="2" />

@@ -6,6 +6,7 @@ const careerAnalysisController = require('../controllers/careerAnalysisControlle
 router.post('/create', careerAnalysisController.createCareerAnalysis);
 router.get('/user', careerAnalysisController.getUserCareerAnalyses);
 router.get('/latest', careerAnalysisController.getLatestAnalysis);
+router.get('/progress-history', careerAnalysisController.getProgressHistory);
 router.get('/:id', careerAnalysisController.getCareerAnalysis);
 router.put('/skill/:skillId/complete', careerAnalysisController.markSkillCompleted);
 

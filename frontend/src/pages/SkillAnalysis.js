@@ -199,7 +199,7 @@ const SkillAnalysis = () => {
                       <div>
                         <p className="text-xs text-zinc-500 uppercase tracking-wide font-semibold">Overall Readiness</p>
                         <p className={`text-3xl font-bold mt-1 ${getReadinessColor(readinessData.overallReadiness)}`}>
-                          {readinessData.overallReadiness}%
+                          {readinessData.overallReadiness.toFixed(2)}%
                         </p>
                       </div>
                       <div>

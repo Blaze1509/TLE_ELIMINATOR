@@ -36,6 +36,21 @@ const skillGapSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  current_proficiency: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  required_proficiency: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: function() {
+      return this.importance === 'critical' ? 90 : 
+             this.importance === 'important' ? 80 : 70;
+    }
+  },
   resources: [resourceSchema]
 });
 
@@ -103,7 +118,7 @@ const careerAnalysisSchema = new mongoose.Schema({
   // Progress tracking fields
   readiness_score: {
     type: Number,
-    default: function() { return 100 - this.gap_percentage; }
+    default: 0
   },
   completed_skills_count: {
     type: Number,
@@ -113,6 +128,22 @@ const careerAnalysisSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  
+  // Progress history for tracking over time
+  progress_history: [{
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    readiness_score: {
+      type: Number,
+      default: 0
+    },
+    completed_skills_count: {
+      type: Number,
+      default: 0
+    }
+  }],
   
   // Status tracking
   predict_completed: {

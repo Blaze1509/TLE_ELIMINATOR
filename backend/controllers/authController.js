@@ -128,12 +128,72 @@ exports.forgotPassword = async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'Password Reset OTP',
+      subject: 'TLE Healthcare Skills - Password Reset Verification',
       html: `
-        <h2>Password Reset Request</h2>
-        <p>Your OTP for password reset is: <strong>${otp}</strong></p>
-        <p>This OTP will expire in 2 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Password Reset - TLE Healthcare Skills</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">TLE Healthcare Skills</h1>
+              <p style="color: #e2e8f0; margin: 8px 0 0 0; font-size: 16px;">Intelligence Platform</p>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 40px 30px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                  <span style="color: white; font-size: 32px; font-weight: bold;">🔐</span>
+                </div>
+                <h2 style="color: #1e293b; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">Password Reset Request</h2>
+                <p style="color: #64748b; margin: 0; font-size: 16px; line-height: 1.5;">We received a request to reset your password. Use the verification code below to proceed.</p>
+              </div>
+              
+              <!-- OTP Code -->
+              <div style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); border: 2px dashed #cbd5e1; border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0;">
+                <p style="color: #475569; margin: 0 0 10px 0; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">Verification Code</p>
+                <div style="font-size: 36px; font-weight: 700; color: #2563eb; letter-spacing: 8px; font-family: 'Courier New', monospace;">${otp}</div>
+                <p style="color: #64748b; margin: 15px 0 0 0; font-size: 14px;">Enter this code in the password reset form</p>
+              </div>
+              
+              <!-- Important Info -->
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 8px; margin: 25px 0;">
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="color: #d97706; font-size: 20px; margin-right: 12px;">⚠️</span>
+                  <div>
+                    <h4 style="color: #92400e; margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">Important Security Notice</h4>
+                    <ul style="color: #a16207; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                      <li>This code expires in <strong>2 minutes</strong></li>
+                      <li>Never share this code with anyone</li>
+                      <li>If you didn't request this, ignore this email</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Action Button -->
+              <div style="text-align: center; margin: 30px 0;">
+                <p style="color: #64748b; margin: 0 0 20px 0; font-size: 14px;">Having trouble? Contact our support team</p>
+                <a href="mailto:support@tlehealthcare.com" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; font-size: 14px;">Contact Support</a>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f8fafc; padding: 25px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+              <p style="color: #64748b; margin: 0 0 10px 0; font-size: 14px;">© 2024 TLE Healthcare Skills Intelligence Platform</p>
+              <p style="color: #94a3b8; margin: 0; font-size: 12px;">This is an automated message. Please do not reply to this email.</p>
+            </div>
+            
+          </div>
+        </body>
+        </html>
       `
     };
 
@@ -242,20 +302,60 @@ exports.submitProfile = async (req, res) => {
       }
     });
     console.log('📈 Gap analysis response received');
+    console.log('📊 Response data:', JSON.stringify(response.data, null, 2));
     
-    // Update analysis with gap analysis results - only update empty/missing fields
-    if (!existingAnalysis.skill_gap || existingAnalysis.skill_gap.length === 0) {
-      existingAnalysis.skill_gap = response.data.skill_gap;
+    // Update analysis with gap analysis results - store all response data
+    const gapData = response.data;
+    
+    // Store skill gap data
+    if (gapData.skill_gap) {
+      existingAnalysis.skill_gap = gapData.skill_gap;
     }
-    if (!existingAnalysis.gap_percentage) {
-      existingAnalysis.gap_percentage = response.data.gap_percentage;
+    
+    // Store gap percentage
+    if (gapData.gap_percentage !== undefined) {
+      existingAnalysis.gap_percentage = gapData.gap_percentage;
     }
-    if (!existingAnalysis.recommendations) {
-      existingAnalysis.recommendations = response.data.recommendations;
+    
+    // Store recommendations
+    if (gapData.recommendations) {
+      existingAnalysis.recommendations = gapData.recommendations;
     }
+    
+    // Store readiness score
+    if (gapData.readiness_score !== undefined) {
+      existingAnalysis.readiness_score = gapData.readiness_score;
+    } else if (gapData.gap_percentage !== undefined) {
+      existingAnalysis.readiness_score = 100 - gapData.gap_percentage;
+    }
+    
+    // Store any additional fields from the model response
+    if (gapData.current_skills) {
+      existingAnalysis.current_skills = gapData.current_skills;
+    }
+    if (gapData.required_skills) {
+      existingAnalysis.required_skills = gapData.required_skills;
+    }
+    if (gapData.matching_skills) {
+      existingAnalysis.matching_skills = gapData.matching_skills;
+    }
+    
+    // Initialize progress tracking
+    existingAnalysis.completed_skills_count = existingAnalysis.skill_gap?.filter(s => s.completed).length || 0;
+    
+    // Add initial progress history entry
+    if (!existingAnalysis.progress_history) {
+      existingAnalysis.progress_history = [];
+    }
+    existingAnalysis.progress_history.push({
+      date: new Date(),
+      readiness_score: existingAnalysis.readiness_score || 0,
+      completed_skills_count: existingAnalysis.completed_skills_count
+    });
+    
     existingAnalysis.analysis_completed = true;
     await existingAnalysis.save();
-    console.log('✅ Final analysis saved');
+    console.log('✅ Final analysis saved with all data');
 
     res.json({
       success: true,

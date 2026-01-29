@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 
 import useAuthStore from './store/authStore';
+import Chatbot from './components/Chatbot';
 
 import LandingPage from "./landing/LandingPage";
 import Signup from './pages/Signup';
@@ -77,6 +78,9 @@ function App() {
             element={token ? <InsightsReports /> : <Navigate to="/login" />} 
           />
         </Routes>
+        
+        {/* Chatbot - only appears for authenticated users */}
+        {token && <Chatbot />}
       </div>
     </Router>
   );

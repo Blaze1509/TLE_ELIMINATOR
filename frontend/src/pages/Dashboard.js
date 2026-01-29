@@ -11,10 +11,12 @@ const Dashboard = () => {
   const { user, token, logout } = useAuthStore();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [careerAnalysis, setCareerAnalysis] = useState(null);
+  const [progressData, setProgressData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCareerAnalysis();
+    fetchProgressHistory();
   }, []);
 
   const fetchCareerAnalysis = async () => {
@@ -36,9 +38,26 @@ const Dashboard = () => {
     }
   };
 
+  const fetchProgressHistory = async () => {
+    try {
+      const response = await fetch('/api/career-analysis/progress-history', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProgressData(data.history || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch progress history:', error);
+    }
+  };
+
   // Real data from career analysis
   const readinessScore = careerAnalysis ? 
-    (careerAnalysis.readiness_score || (100 - careerAnalysis.gap_percentage)) : 0;
+    parseFloat((careerAnalysis.readiness_score || (100 - careerAnalysis.gap_percentage) || 0).toFixed(2)) : 0;
   const targetRole = careerAnalysis?.career_goal || 'Health Informatics Engineer';
   const roleDescription = 'Design healthcare IT systems with FHIR, HL7, and HIPAA compliance';
   
@@ -55,15 +74,9 @@ const Dashboard = () => {
 
   const radarData = careerAnalysis?.skill_gap?.slice(0, 5).map(skill => ({
     skill: skill.skill_name,
-    required: skill.importance === 'critical' ? 90 : skill.importance === 'important' ? 80 : 70,
-    current: skill.completed ? 85 : 20
-  })) || [
-    { skill: 'FHIR', required: 90, current: 0 },
-    { skill: 'HL7', required: 85, current: 0 },
-    { skill: 'SQL', required: 80, current: 0 },
-    { skill: 'HIPAA', required: 95, current: 0 },
-    { skill: 'Data Analytics', required: 75, current: 0 }
-  ];
+    required: skill.required_proficiency || (skill.importance === 'critical' ? 90 : skill.importance === 'important' ? 80 : 70),
+    current: skill.current_proficiency || (skill.completed ? 85 : 0)
+  })) || [];
 
   const nextActions = careerAnalysis?.skill_gap?.filter(s => !s.completed).slice(0, 3).map((skill, index) => ({
     id: index + 1,
@@ -72,15 +85,6 @@ const Dashboard = () => {
     priority: skill.importance === 'critical' ? 'High' : 'Medium',
     icon: index === 0 ? '🎯' : index === 1 ? '📚' : '⚡'
   })) || [];
-
-  const progressData = [
-    { week: 'Week 1', readiness: Math.max(0, readinessScore - 30) },
-    { week: 'Week 2', readiness: Math.max(0, readinessScore - 25) },
-    { week: 'Week 3', readiness: Math.max(0, readinessScore - 20) },
-    { week: 'Week 4', readiness: Math.max(0, readinessScore - 15) },
-    { week: 'Week 5', readiness: Math.max(0, readinessScore - 10) },
-    { week: 'Week 6', readiness: readinessScore }
-  ];
 
   const handleLogout = () => {
     logout();
@@ -232,7 +236,7 @@ const Dashboard = () => {
                         </defs>
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center flex-col">
-                        <span className="text-4xl font-bold text-white">{readinessScore}%</span>
+                        <span className="text-4xl font-bold text-white">{readinessScore.toFixed(2)}%</span>
                         <span className="text-xs text-zinc-500 uppercase tracking-widest mt-1">Ready</span>
                       </div>
                     </div>
@@ -439,7 +443,7 @@ const Dashboard = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex items-end justify-between gap-2 h-40 pt-4 px-2">
-                      {progressData.map((data, index) => (
+                      {progressData.length > 0 ? progressData.map((data, index) => (
                         <div key={index} className="flex-1 flex flex-col items-center group">
                           <div className="relative w-full h-32 flex items-end justify-center mb-3 bg-zinc-950/50 rounded-lg">
                             <div
@@ -453,17 +457,22 @@ const Dashboard = () => {
                           </div>
                           <span className="text-xs text-zinc-500 font-medium">{data.week}</span>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="flex-1 text-center text-zinc-500">
+                          <p className="text-sm">No progress data available</p>
+                          <p className="text-xs mt-1">Complete skills to track progress</p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-between items-center pt-6 border-t border-zinc-800 mt-2">
                       <div>
                         <p className="text-xs text-zinc-500 uppercase tracking-wider">Starting Score</p>
-                        <p className="text-xl font-bold text-white">{progressData[0].readiness}%</p>
+                        <p className="text-xl font-bold text-white">{progressData.length > 0 ? progressData[0].readiness : 0}%</p>
                       </div>
                       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent mx-8"></div>
                       <div className="text-right">
                         <p className="text-xs text-zinc-500 uppercase tracking-wider">Current Score</p>
-                        <p className="text-xl font-bold text-cyan-400">{progressData[progressData.length - 1].readiness}%</p>
+                        <p className="text-xl font-bold text-cyan-400">{progressData.length > 0 ? progressData[progressData.length - 1].readiness : readinessScore.toFixed(2)}%</p>
                       </div>
                     </div>
                   </div>

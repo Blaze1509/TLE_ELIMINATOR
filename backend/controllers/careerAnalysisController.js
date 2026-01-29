@@ -220,34 +220,74 @@ exports.getLatestAnalysis = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
+      console.log('❌ No token provided for latest analysis');
+      return res.status(401).json({ success: false, error: 'No token provided' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('🔍 Looking for analysis for user:', decoded.userId);
+    
+    const analysis = await CareerAnalysis.findOne({ 
+      userId: decoded.userId
+    }).sort({ createdAt: -1 });
+
+    if (!analysis) {
+      console.log('⚠️ No analysis found for user:', decoded.userId);
+      return res.status(404).json({ 
+        success: false, 
+        error: 'No analysis found' 
+      });
+    }
+
+    console.log('✅ Found analysis:', analysis._id);
+    res.json({
+      success: true,
+      analysis
+    });
+  } catch (error) {
+    console.error('❌ Get latest analysis error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch analysis' });
+  }
+};
+
+// Get progress history
+exports.getProgressHistory = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
       return res.status(401).json({ success: false, error: 'No token provided' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     const analysis = await CareerAnalysis.findOne({ 
-      userId: decoded.userId,
-      analysis_completed: true 
+      userId: decoded.userId
     }).sort({ createdAt: -1 });
 
-    if (!analysis) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'No completed analysis found' 
+    if (!analysis || !analysis.progress_history) {
+      return res.json({
+        success: true,
+        history: []
       });
     }
 
+    // Format progress history for frontend
+    const formattedHistory = analysis.progress_history.map((entry, index) => ({
+      week: `Week ${index + 1}`,
+      date: entry.date,
+      readiness: entry.readiness_score,
+      completed_skills: entry.completed_skills_count
+    }));
+
     res.json({
       success: true,
-      analysis
+      history: formattedHistory
     });
   } catch (error) {
-    console.error('Get latest analysis error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch analysis' });
+    console.error('Get progress history error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch progress history' });
   }
 };
-
-// Mark skill as completed
 exports.markSkillCompleted = async (req, res) => {
   try {
     const { skillId } = req.params;
@@ -275,6 +315,7 @@ exports.markSkillCompleted = async (req, res) => {
     const skill = analysis.skill_gap.id(skillId);
     if (skill) {
       skill.completed = true;
+      skill.current_proficiency = skill.required_proficiency || 85; // Set to required level when completed
       
       // Update completed skills count and readiness score
       analysis.completed_skills_count = analysis.skill_gap.filter(s => s.completed).length;
@@ -284,7 +325,14 @@ exports.markSkillCompleted = async (req, res) => {
       const totalSkills = analysis.skill_gap.length;
       const completedSkills = analysis.completed_skills_count;
       const completionRate = completedSkills / totalSkills;
-      analysis.readiness_score = Math.min(95, 30 + (completionRate * 65)); // Scale from 30% to 95%
+      analysis.readiness_score = Math.round(completionRate * 100); // Simple 0-100% based on completion
+      
+      // Add progress entry to history
+      analysis.progress_history.push({
+        date: new Date(),
+        readiness_score: analysis.readiness_score,
+        completed_skills_count: analysis.completed_skills_count
+      });
       
       await analysis.save();
     }

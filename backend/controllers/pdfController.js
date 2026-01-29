@@ -35,7 +35,9 @@ const analyzePdf = async (req, res) => {
       resume_data: response.data.data,
       additional_skills: [],
       career_goal: '',
-      predict_completed: true
+      predict_completed: true,
+      readiness_score: 0,
+      gap_percentage: 0
     });
 
     await careerAnalysis.save();
