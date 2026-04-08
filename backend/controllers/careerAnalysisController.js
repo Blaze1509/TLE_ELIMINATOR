@@ -155,6 +155,12 @@ exports.createCareerAnalysis = async (req, res) => {
 
   } catch (error) {
     console.error('Career analysis error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired. Please login again.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token. Please login again.' });
+    }
     res.status(500).json({ success: false, error: 'Career analysis failed' });
   }
 };
@@ -179,6 +185,12 @@ exports.getUserCareerAnalyses = async (req, res) => {
 
   } catch (error) {
     console.error('Get career analyses error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired. Please login again.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token. Please login again.' });
+    }
     res.status(500).json({ success: false, error: 'Failed to fetch career analyses' });
   }
 };
@@ -211,6 +223,12 @@ exports.getCareerAnalysis = async (req, res) => {
 
   } catch (error) {
     console.error('Get career analysis error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired. Please login again.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token. Please login again.' });
+    }
     res.status(500).json({ success: false, error: 'Failed to fetch career analysis' });
   }
 };
@@ -246,6 +264,12 @@ exports.getLatestAnalysis = async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Get latest analysis error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired. Please login again.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token. Please login again.' });
+    }
     res.status(500).json({ success: false, error: 'Failed to fetch analysis' });
   }
 };
@@ -285,6 +309,12 @@ exports.getProgressHistory = async (req, res) => {
     });
   } catch (error) {
     console.error('Get progress history error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired. Please login again.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token. Please login again.' });
+    }
     res.status(500).json({ success: false, error: 'Failed to fetch progress history' });
   }
 };
@@ -344,6 +374,12 @@ exports.markSkillCompleted = async (req, res) => {
     });
   } catch (error) {
     console.error('Mark skill completed error:', error);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, error: 'Token expired. Please login again.' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, error: 'Invalid token. Please login again.' });
+    }
     res.status(500).json({ success: false, error: 'Failed to update skill' });
   }
 };

@@ -1,9 +1,9 @@
 import React, { useRef, useLayoutEffect, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { gsap } from "https://cdn.skypack.dev/gsap";
-import { ScrollTrigger } from "https://cdn.skypack.dev/gsap/ScrollTrigger";
-import { ScrollToPlugin } from "https://cdn.skypack.dev/gsap/ScrollToPlugin";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import Mission from "./components/Mission.jsx";
 import Navbar from "./components/Navbar.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
